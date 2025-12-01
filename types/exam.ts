@@ -27,6 +27,12 @@ export interface ExamAnswer {
   submittedAt?: string;
 }
 
+export interface AnswerUnit {
+  index: number;
+  text: string;
+  isCorrect?: boolean;
+}
+
 export interface ExamResult {
   id: number;
   examId: number;
