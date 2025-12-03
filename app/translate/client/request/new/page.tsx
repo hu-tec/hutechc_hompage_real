@@ -84,7 +84,6 @@ const TONES = [
 const HUMAN_WORK_TYPES = [
   { id: 'none', label: '요청 없음' },
   { id: 'review', label: '감수 요청' },
-  { id: 'edit', label: '에디팅 요청' },
 ];
 
 const HUMAN_LEVELS = [
@@ -107,9 +106,10 @@ export default function NewRequestPage() {
   const [middleCategory, setMiddleCategory] = useState<string>('law-domestic');
   const [detailCategory, setDetailCategory] = useState<string>('law-domestic-complaint');
 
-  // 언어
-  const [sourceLang, setSourceLang] = useState<string>('ko');
-  const [targetLang, setTargetLang] = useState<string>('en');
+  // 언어 설정 (출발어 모드 + 대상 언어)
+  const [sourceMode, setSourceMode] = useState<'detect' | 'fixed'>('detect');
+  const [fixedSourceLang, setFixedSourceLang] = useState<string>('ko');
+  const [targetLanguages, setTargetLanguages] = useState<string[]>(['en']);
 
   // AI / 에디터 / 휴먼 작업
   const [selectedModels, setSelectedModels] = useState<string[]>(['chatgpt']);
@@ -119,14 +119,10 @@ export default function NewRequestPage() {
   const [humanWorkType, setHumanWorkType] = useState<string>('review');
   const [humanLevel, setHumanLevel] = useState<string>('senior');
   const [isUrgentFlag, setIsUrgentFlag] = useState<boolean>(false);
-  const [settingUse, setSettingUse] = useState<'use' | 'no'>('use');
-
-  // 언어설정
-  const [autoSourceMode, setAutoSourceMode] = useState<'detect' | 'fixed'>('detect');
-  const [preferredTargets, setPreferredTargets] = useState<string[]>(['en']);
 
   // 파일
   const [files, setFiles] = useState<{ name: string; size: number }[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
 
   const [errors, setErrors] = useState<string[]>([]);
 
@@ -136,17 +132,39 @@ export default function NewRequestPage() {
     );
   };
 
-  const handlePreferredTargetToggle = (code: string) => {
-    setPreferredTargets((prev) =>
+  const handleTargetToggle = (code: string) => {
+    setTargetLanguages((prev) =>
       prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
     );
+  };
+
+  const applyFiles = (fileList: FileList | File[]) => {
+    const next = Array.from(fileList).map((f) => ({ name: f.name, size: f.size }));
+    setFiles(next);
   };
 
   const handleFileChange = (e: any) => {
     const fileList: FileList | null = e.target.files;
     if (!fileList) return;
-    const next = Array.from(fileList).map((f) => ({ name: f.name, size: f.size }));
-    setFiles(next);
+    applyFiles(fileList);
+  };
+
+  const handleDrop = (e: any) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer?.files?.length) {
+      applyFiles(e.dataTransfer.files);
+    }
+  };
+
+  const handleDragOver = (e: any) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: any) => {
+    e.preventDefault();
+    setIsDragging(false);
   };
 
   const handleNext = () => {
@@ -155,11 +173,11 @@ export default function NewRequestPage() {
     if (!mainCategory || !middleCategory || !detailCategory) {
       newErrors.push('카테고리를 모두 선택해주세요.');
     }
-    if (!sourceLang || !targetLang) {
-      newErrors.push('출발어와 도착어를 선택해주세요.');
+    if (sourceMode === 'fixed' && !fixedSourceLang) {
+      newErrors.push('출발어를 선택해주세요.');
     }
-    if (sourceLang === targetLang) {
-      newErrors.push('출발어와 도착어는 서로 다른 언어여야 합니다.');
+    if (targetLanguages.length === 0) {
+      newErrors.push('도착어(대상 언어)를 최소 1개 이상 선택해주세요.');
     }
 
     if (newErrors.length > 0) {
@@ -171,19 +189,22 @@ export default function NewRequestPage() {
       mainCategory,
       middleCategory,
       detailCategory,
-      sourceLang,
-      targetLang,
-      aiModels: selectedModels,
-      tone,
-      customPrompt,
-      useEditor,
-      humanWorkType,
-      humanLevel,
-      isUrgentFlag,
-      settingUse,
-      languageSettings: {
-        autoSourceMode,
-        preferredTargets,
+      language: {
+        sourceMode,
+        sourceLang: sourceMode === 'fixed' ? fixedSourceLang : null,
+        targetLanguages,
+        primaryTarget: targetLanguages[0] ?? null,
+      },
+      ai: {
+        models: selectedModels,
+        tone,
+        customPrompt,
+      },
+      editor: useEditor,
+      humanWork: {
+        type: humanWorkType,
+        level: humanLevel,
+        urgent: isUrgentFlag,
       },
       files,
     };
@@ -200,7 +221,7 @@ export default function NewRequestPage() {
       <div className="max-w-5xl mx-auto">
         <header className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">새 번역 의뢰</h1>
-          <p className="text-sm text-gray-600">카테고리, 언어, AI 설정, 휴먼 작업, 언어설정, 파일까지 한 번에 입력합니다.</p>
+          <p className="text-sm text-gray-600">카테고리, 언어, AI 설정, 휴먼 작업, 파일까지 한 번에 입력합니다.</p>
         </header>
 
         {errors.length > 0 && (
@@ -213,13 +234,13 @@ export default function NewRequestPage() {
           </div>
         )}
 
-        <div className="space-y-8 bg-white rounded-xl shadow p-6">
+        <div className="space-y-5">
           {/* 카테고리 선택 */}
-          <section>
+          <section className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <h2 className="text-sm font-semibold text-gray-800 mb-2">카테고리 선택</h2>
             <div className="flex flex-wrap gap-3 items-center">
               <select
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm min-w-[140px]"
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm min-w-[140px] bg-white"
                 value={mainCategory}
                 onChange={(e) => {
                   const nextMain = e.target.value;
@@ -238,7 +259,7 @@ export default function NewRequestPage() {
               </select>
 
               <select
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm min-w-[150px]"
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm min-w-[150px] bg-white"
                 value={middleCategory}
                 onChange={(e) => {
                   const nextMid = e.target.value;
@@ -255,7 +276,7 @@ export default function NewRequestPage() {
               </select>
 
               <select
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm min-w-[150px]"
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm min-w-[150px] bg-white"
                 value={detailCategory}
                 onChange={(e) => setDetailCategory(e.target.value)}
               >
@@ -265,20 +286,64 @@ export default function NewRequestPage() {
                   </option>
                 ))}
               </select>
-
             </div>
           </section>
 
-          {/* 언어 */}
-          <section>
+          {/* 첨부파일 */}
+          <section className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h2 className="text-sm font-semibold text-gray-800 mb-2">첨부 파일</h2>
+            <p className="text-xs text-gray-600 mb-2">파일을 업로드하면 출발어를 자동 감지하는 데 활용됩니다.</p>
+
+            <div
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              className={`flex flex-col items-center justify-center px-4 py-6 border-2 border-dashed rounded-md text-xs mb-3 transition-colors ${
+                isDragging ? 'border-indigo-400 bg-indigo-50' : 'border-gray-300 bg-white'
+              }`}
+            >
+              <p className="text-gray-700 mb-1">이 영역으로 파일을 드래그해서 올려주세요.</p>
+              <p className="text-gray-500">또는 아래 파일 선택 버튼을 사용하세요.</p>
+            </div>
+
+            <input
+              type="file"
+              multiple
+              onChange={handleFileChange}
+              className="text-sm"
+            />
+            {files.length > 0 && (
+              <ul className="mt-2 space-y-1 text-xs text-gray-700">
+                {files.map((f) => (
+                  <li key={f.name}>
+                    {f.name} ({Math.round(f.size / 1024)} KB)
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* 언어 (언어설정 통합) */}
+          <section className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <h2 className="text-sm font-semibold text-gray-800 mb-2">언어</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">출발어</label>
+
+            {/* 출발어 모드 */}
+            <div className="mb-3 flex flex-wrap items-center gap-3 text-xs">
+              <span className="text-gray-600">출발어:</span>
+              <select
+                className="border border-gray-300 rounded-md px-3 py-1.5 text-xs bg-white"
+                value={sourceMode}
+                onChange={(e) => setSourceMode(e.target.value as 'detect' | 'fixed')}
+              >
+                <option value="detect">언어 감지</option>
+                <option value="fixed">직접 선택</option>
+              </select>
+
+              {sourceMode === 'fixed' && (
                 <select
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                  value={sourceLang}
-                  onChange={(e) => setSourceLang(e.target.value)}
+                  className="border border-gray-300 rounded-md px-3 py-1.5 text-xs bg-white min-w-[140px]"
+                  value={fixedSourceLang}
+                  onChange={(e) => setFixedSourceLang(e.target.value)}
                 >
                   {LANGUAGES.map((lang) => (
                     <option key={lang.code} value={lang.code}>
@@ -286,28 +351,31 @@ export default function NewRequestPage() {
                     </option>
                   ))}
                 </select>
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">도착어</label>
-                <select
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                  value={targetLang}
-                  onChange={(e) => setTargetLang(e.target.value)}
-                >
-                  {LANGUAGES.map((lang) => (
-                    <option key={lang.code} value={lang.code}>
-                      {getLanguageLabel(lang.code)}
-                    </option>
-                  ))}
-                </select>
+              )}
+            </div>
+
+            {/* 도착어(대상 언어) */}
+            <div>
+              <p className="text-xs text-gray-600 mb-2">도착어 (대상 언어 선택)</p>
+              <div className="flex flex-wrap gap-3 text-sm">
+                {LANGUAGES.map((lang) => (
+                  <label key={lang.code} className="inline-flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={targetLanguages.includes(lang.code)}
+                      onChange={() => handleTargetToggle(lang.code)}
+                    />
+                    <span>{getLanguageLabel(lang.code)}</span>
+                  </label>
+                ))}
               </div>
             </div>
           </section>
 
-          {/* 사용 AI */}
-          <section>
+          {/* 사용 AI + 톤 + 프롬프트 */}
+          <section className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <h2 className="text-sm font-semibold text-gray-800 mb-2">사용 AI</h2>
-            <div className="flex flex-wrap gap-4 text-sm">
+            <div className="flex flex-wrap gap-4 text-sm mb-4">
               {AI_MODELS.map((m) => (
                 <label key={m.id} className="inline-flex items-center gap-2">
                   <input
@@ -320,7 +388,7 @@ export default function NewRequestPage() {
               ))}
             </div>
 
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-gray-600 mb-1">톤</p>
                 <div className="flex flex-wrap gap-3 text-xs">
@@ -341,7 +409,7 @@ export default function NewRequestPage() {
               <div>
                 <p className="text-xs text-gray-600 mb-1">커스텀 프롬프트 (선택)</p>
                 <textarea
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-xs"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-xs bg-white"
                   rows={3}
                   value={customPrompt}
                   onChange={(e) => setCustomPrompt(e.target.value)}
@@ -352,7 +420,7 @@ export default function NewRequestPage() {
           </section>
 
           {/* 양식 에디터 */}
-          <section>
+          <section className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <h2 className="text-sm font-semibold text-gray-800 mb-2">양식 에디터</h2>
             <div className="flex gap-6 text-sm">
               <label className="inline-flex items-center gap-2">
@@ -379,11 +447,11 @@ export default function NewRequestPage() {
           </section>
 
           {/* 휴먼 작업 요청 */}
-          <section>
+          <section className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <h2 className="text-sm font-semibold text-gray-800 mb-2">휴먼 작업 요청</h2>
             <div className="flex flex-wrap items-center gap-4 text-sm">
               <select
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm min-w-[130px]"
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm min-w-[130px] bg-white"
                 value={humanWorkType}
                 onChange={(e) => setHumanWorkType(e.target.value)}
               >
@@ -395,7 +463,7 @@ export default function NewRequestPage() {
               </select>
 
               <select
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm min-w-[130px]"
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm min-w-[130px] bg-white"
                 value={humanLevel}
                 onChange={(e) => setHumanLevel(e.target.value)}
               >
@@ -416,82 +484,6 @@ export default function NewRequestPage() {
                 <HelpCircle className="w-4 h-4 text-gray-400" />
               </label>
             </div>
-          </section>
-
-          {/* 설정 */}
-          <section>
-            <h2 className="text-sm font-semibold text-gray-800 mb-2">설정</h2>
-            <div className="flex gap-6 text-sm">
-              <label className="inline-flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="setting-use"
-                  value="use"
-                  checked={settingUse === 'use'}
-                  onChange={() => setSettingUse('use')}
-                />
-                <span>사용</span>
-              </label>
-              <label className="inline-flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="setting-use"
-                  value="no"
-                  checked={settingUse === 'no'}
-                  onChange={() => setSettingUse('no')}
-                />
-                <span>미사용</span>
-              </label>
-            </div>
-          </section>
-
-          {/* 언어설정 */}
-          <section>
-            <h2 className="text-sm font-semibold text-gray-800 mb-2">언어설정</h2>
-            <div className="mb-3 flex flex-wrap items-center gap-3 text-xs">
-              <span className="text-gray-600">출발어:</span>
-              <select
-                className="border border-gray-300 rounded-md px-3 py-1.5 text-xs"
-                value={autoSourceMode}
-                onChange={(e) => setAutoSourceMode(e.target.value as 'detect' | 'fixed')}
-              >
-                <option value="detect">언어 감지</option>
-                <option value="fixed">직접 지정</option>
-              </select>
-            </div>
-
-            <div className="flex flex-wrap gap-3 text-sm">
-              {LANGUAGES.map((lang) => (
-                <label key={lang.code} className="inline-flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={preferredTargets.includes(lang.code)}
-                    onChange={() => handlePreferredTargetToggle(lang.code)}
-                  />
-                  <span>{getLanguageLabel(lang.code)}</span>
-                </label>
-              ))}
-            </div>
-          </section>
-
-          {/* 첨부파일 */}
-          <section>
-            <h2 className="text-sm font-semibold text-gray-800 mb-2">첨부 파일</h2>
-            <input
-              type="file"
-              multiple
-              onChange={handleFileChange}
-              className="text-sm"
-            />
-            {files.length > 0 && (
-              <ul className="mt-2 space-y-1 text-xs text-gray-700">
-                {files.map((f) => (
-                  <li key={f.name}>
-                    {f.name} ({Math.round(f.size / 1024)} KB)
-                  </li>
-                ))}
-              </ul>
-            )}
           </section>
         </div>
 
