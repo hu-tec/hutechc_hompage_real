@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 
 const menuItems = [
   { name: '시험접수', href: '/mypage/registration' },
-  { name: '시험응시', href: '/mypage/exam' },
+  { name: '시험응시', href: '/mypage/available' },
   { name: '시험결과', href: '/mypage/results' },
   { name: '지각증 신청', href: '/mypage/late-certificate' },
   { name: '결제 내역', href: '/mypage/payments' },

@@ -6,14 +6,14 @@ export default function HomePage() {
         <p className="text-xl text-gray-600 mb-10">시험, 번역, 전시/가이드를 한 곳에서</p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {/* 시험 응시 */}
+          {/* 시험 */}
           <a 
-            href="/mypage/available"
+            href="/exam"
             className="block p-8 bg-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
           >
             <div className="text-5xl mb-4">📝</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">시험 응시</h2>
-            <p className="text-gray-600">번역 시험 마이페이지</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">시험</h2>
+            <p className="text-gray-600">시험 응시 / 출제자 모드 선택</p>
           </a>
 
           {/* 번역 서비스 */}
