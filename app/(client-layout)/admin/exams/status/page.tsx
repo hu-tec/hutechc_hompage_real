@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useExamDraftStore } from "@/lib/examDraftStore";
+import { useState, useEffect } from "react";
+import { getDrafts, approveDraft } from "@/lib/examDraftStore";
 
 const STATUS_BADGE_CLASS: Record<string, string> = {
   출제중: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -11,22 +11,12 @@ const STATUS_BADGE_CLASS: Record<string, string> = {
 };
 
 export default function ExamStatusPage() {
-  const { drafts, approveDraft, initializeFromStorage } = useExamDraftStore();
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [version, setVersion] = useState(0);
+  const drafts = getDrafts();
 
   useEffect(() => {
-    initializeFromStorage();
-    setIsHydrated(true);
-  }, [initializeFromStorage]);
-
-  if (!isHydrated) {
-    return (
-      <main className="max-w-5xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-4">출제 현황</h1>
-        <p className="text-gray-500 text-sm">출제 현황을 불러오는 중입니다...</p>
-      </main>
-    );
-  }
+    // 인메모리 mock이므로 별도 초기화는 없음. 나중에 스토어 구조 변경 시 여기서 처리.
+  }, []);
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-8 space-y-8">

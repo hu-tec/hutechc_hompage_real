@@ -640,7 +640,7 @@ export default function AdminExamsPage() {
                             .join(' / ');
 
                           let statusBadgeClass = 'bg-gray-100 text-gray-700 border-gray-200';
-                          let statusLabel = draft.status;
+                          let statusLabel: string = draft.status;
                           if (draft.status === '출제자전달완료') {
                             statusBadgeClass = 'bg-yellow-100 text-yellow-800 border-yellow-200';
                             statusLabel = '출제자에게 전달완료';
