@@ -3,6 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import {
+  extractTextStats,
+  calculateAmountFromStep1,
+  TranslationRequestData,
+} from '@/lib/priceCalculator';
 
 // 카테고리 레이블 매핑 (STEP1과 동일 구조)
 const MAIN_CATEGORIES = [
@@ -86,7 +91,7 @@ interface TranslationRequest {
     targetLanguages: string[];
     primaryTarget: string | null;
   };
-  ai: {
+  ai:{
     models: string[];
     tone: string;
     customPrompt: string;
@@ -98,6 +103,11 @@ interface TranslationRequest {
     urgent: boolean;
   };
   files: { name: string; size: number }[];
+  fileStats?: {
+    charCount: number;
+    wordCount: number;
+    minutes: number;
+  };
 }
 
 // 긴급 단계 정의
@@ -180,20 +190,60 @@ export default function Step2Page() {
   const [translationTypeId, setTranslationTypeId] = useState<'TTT' | 'STT' | 'TTS' | 'STS'>('TTT');
   const [matchingMode, setMatchingMode] = useState<'auto' | 'direct' | 'accepted'>('auto');
 
-  const [baseAmount, setBaseAmount] = useState<number>(0); // 사용자가 입력하는 기본 금액
-  const [charCount, setCharCount] = useState<number>(0); // 글자수/단어수
+  const [baseAmount, setBaseAmount] = useState<number>(0); // 자동 계산되는 기본 금액
+  const [charCount, setCharCount] = useState<number>(0); // 글자수 (자동 감지)
+  const [isCalculating, setIsCalculating] = useState<boolean>(false);
 
+  // STEP 1 데이터 로드 및 기본 금액 자동 계산
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const stored = window.sessionStorage.getItem('translationRequest');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as TranslationRequest;
-        setRequest(parsed);
-      } catch (e) {
-        console.error('Failed to parse translationRequest', e);
+    const loadAndCalculate = async () => {
+      if (typeof window === 'undefined') return;
+      
+      const stored = window.sessionStorage.getItem('translationRequest');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored) as TranslationRequest;
+          setRequest(parsed);
+          
+          // 자동 계산 시작
+          setIsCalculating(true);
+          
+          // STEP 1에서 저장된 파일 글자 수 통계 사용
+          let stats = parsed.fileStats || { wordCount: 0, charCount: 0, minutes: 0 };
+          
+          // fileStats가 없으면 파일 메타데이터로 추정
+          if (!parsed.fileStats && parsed.files && parsed.files.length > 0) {
+            const estimatedChars = Math.floor(parsed.files[0].size / 2);
+            stats = {
+              charCount: estimatedChars,
+              wordCount: Math.floor(estimatedChars / 5),
+              minutes: 0,
+            };
+          }
+          
+          setCharCount(stats.charCount);
+          
+          // 기본 금액 계산
+          try {
+            const amount = await calculateAmountFromStep1(
+              parsed as TranslationRequestData,
+              stats
+            );
+            setBaseAmount(amount);
+          } catch (e) {
+            console.error('Failed to calculate amount:', e);
+            setBaseAmount(0);
+          }
+          
+          setIsCalculating(false);
+        } catch (e) {
+          console.error('Failed to parse translationRequest', e);
+          setIsCalculating(false);
+        }
       }
-    }
+    };
+    
+    loadAndCalculate();
   }, []);
 
   if (!request) {
@@ -239,34 +289,35 @@ export default function Step2Page() {
         <div className="grid lg:grid-cols-3 gap-6 items-start">
           {/* LEFT: 설정 */}
           <div className="lg:col-span-2 space-y-5">
-            {/* 기본 금액 입력 */}
-            <section className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <h2 className="text-sm font-semibold text-gray-800 mb-2">기본 금액</h2>
+            {/* 기본 금액 - 자동 계산 */}
+            <section className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h2 className="text-sm font-semibold text-gray-800 mb-2">기본 금액 (자동 계산)</h2>
               <p className="text-xs text-gray-600 mb-3">
-                1단계까지의 선택(분류, 언어, AI/휴먼 작업 등)을 기준으로 산정된 기본 금액을 입력하세요.
-                (관리자/시스템 연동 시 자동 계산 예정)
+                1단계 선택(분류, 언어, AI/휴먼 작업 등)과 업로드된 파일의 글자수를 기준으로 자동 산정되었습니다.
               </p>
+              {isCalculating && (
+                <div className="text-xs text-blue-600 mb-2">계산 중...</div>
+              )}
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-sm text-gray-700">₩</span>
                 <input
                   type="number"
                   value={baseAmount || ''}
-                  onChange={(e) => setBaseAmount(Number(e.target.value) || 0)}
-                  className="w-40 border border-gray-300 rounded-md px-3 py-2 text-sm bg-white"
-                  placeholder="예: 200000"
+                  disabled
+                  className="w-40 border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-100 text-gray-700 cursor-not-allowed"
                 />
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-600">
-                <span>글자수 / 단어수</span>
+                <span>감지된 글자수</span>
                 <input
                   type="number"
                   value={charCount || ''}
-                  onChange={(e) => setCharCount(Number(e.target.value) || 0)}
-                  className="w-28 border border-gray-300 rounded-md px-2 py-1 text-xs bg-white"
-                  placeholder="예: 10000"
+                  disabled
+                  className="w-28 border border-gray-300 rounded-md px-2 py-1 text-xs bg-gray-100 text-gray-700 cursor-not-allowed"
                 />
                 <span>자</span>
               </div>
+              <p className="text-[11px] text-blue-600 mt-2">※ 정확한 계산을 위해 STEP 1에서 파일을 다시 업로드하거나 수정해주세요.</p>
             </section>
 
             {/* 번역사 매칭 방식 */}

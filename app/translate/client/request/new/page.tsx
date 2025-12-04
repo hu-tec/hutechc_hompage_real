@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronRight, HelpCircle } from 'lucide-react';
+import { extractTextStats } from '@/lib/priceCalculator';
 
 // 카테고리 (대/중/소)
 const MAIN_CATEGORIES = [
@@ -122,6 +123,11 @@ export default function NewRequestPage() {
 
   // 파일
   const [files, setFiles] = useState<{ name: string; size: number }[]>([]);
+  const [fileStats, setFileStats] = useState<{
+    charCount: number;
+    wordCount: number;
+    minutes: number;
+  }>({ charCount: 0, wordCount: 0, minutes: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
   const [errors, setErrors] = useState<string[]>([]);
@@ -138,9 +144,26 @@ export default function NewRequestPage() {
     );
   };
 
-  const applyFiles = (fileList: FileList | File[]) => {
+  const applyFiles = async (fileList: FileList | File[]) => {
     const next = Array.from(fileList).map((f) => ({ name: f.name, size: f.size }));
     setFiles(next);
+    
+    // 첫 번째 파일의 글자 수 추출
+    if (fileList.length > 0) {
+      try {
+        const stats = await extractTextStats(fileList[0] as File);
+        setFileStats(stats);
+      } catch (e) {
+        console.error('Failed to extract file stats:', e);
+        // 파일 크기 기반 추정
+        const estimatedChars = Math.floor(fileList[0].size / 2);
+        setFileStats({
+          charCount: estimatedChars,
+          wordCount: Math.floor(estimatedChars / 5),
+          minutes: 0,
+        });
+      }
+    }
   };
 
   const handleFileChange = (e: any) => {
@@ -207,6 +230,7 @@ export default function NewRequestPage() {
         urgent: isUrgentFlag,
       },
       files,
+      fileStats, // 파일 글자 수 통계
     };
 
     sessionStorage.setItem('translationRequest', JSON.stringify(payload));

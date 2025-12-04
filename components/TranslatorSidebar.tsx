@@ -4,11 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const menuItems = [
-  { name: '신규 요청', href: '/translator/available' },
-  { name: '진행 중인 작업', href: '/translator/working' },
-  { name: '완료된 작업', href: '/translator/completed' },
-  { name: '수익 관리', href: '/translator/earnings' },
-  { name: '프로필 설정', href: '/translator/profile' },
+  { name: '내 프로필', href: '/translate/translator/profile' },
+  { name: '요청 설정', href: '/translate/translator/settings' },
+  { name: '직접 의뢰하기', href: '/translate/translator/available' },
+  { name: '신규 요청', href: '/translate/translator/requests' },
+  { name: '진행 중', href: '/translate/translator/working' },
+  { name: '완료됨', href: '/translate/translator/completed' },
 ];
 
 export default function TranslatorSidebar() {

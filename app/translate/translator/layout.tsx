@@ -1,6 +1,8 @@
-import Header from '@/components/Header';
+'use client';
+
 import IconSidebar from '@/components/IconSidebar';
 import TranslatorSidebar from '@/components/TranslatorSidebar';
+import { TranslatorProvider } from '@/lib/translatorContext';
 
 export default function TranslatorLayout({
   children,
@@ -8,8 +10,7 @@ export default function TranslatorLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <TranslatorProvider>
       <div className="flex">
         <IconSidebar />
         <TranslatorSidebar />
@@ -17,6 +18,6 @@ export default function TranslatorLayout({
           {children}
         </main>
       </div>
-    </div>
+    </TranslatorProvider>
   );
 }
