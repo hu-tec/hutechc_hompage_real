@@ -91,7 +91,7 @@ export default function ExamStatusPage() {
                       <td className="px-4 py-3 align-top text-center text-gray-700">{draft.questionCount}문항</td>
                       <td className="px-4 py-3 align-top text-center text-gray-700">{draft.durationMinutes}분</td>
                       <td className="px-4 py-3 align-top text-gray-700">
-                        {draft.assignedTranslatorName ?? "-"}
+                        {draft.assignedTranslatorId ?? "-"}
                       </td>
                       <td className="px-4 py-3 align-top text-center">
                         <span
