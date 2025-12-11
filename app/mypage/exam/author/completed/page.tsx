@@ -229,7 +229,8 @@ export default function AuthorCompletedExamsPage() {
                           onClick={() => {
                             setGradingStatus((prev) => ({ ...prev, [selected.id]: 'grading' }));
                             setView('grading');
-                            alert('채점을 시작합니다. (mock)');
+                            // 채점 전용 화면으로 이동
+                            window.location.href = `/mypage/exam/author/grading/${selected.id}`;
                           }}
                         >
                           채점하기
