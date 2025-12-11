@@ -915,7 +915,11 @@ function CreateExamPage({
                 <span className="text-xs text-gray-500">합계: {getRatioSum(subjectiveRatio)}%</span>
               </div>
               <div className="space-y-2">
-                {[{ key: 'high', label: '상' }, { key: 'mid', label: '중' }, { key: 'low', label: '하' }] 
+                {([
+                  { key: 'high', label: '상' },
+                  { key: 'mid', label: '중' },
+                  { key: 'low', label: '하' },
+                ] as { key: keyof typeof subjectiveRatio; label: string }[])
                   .map(({ key, label }) => (
                   <div key={key} className="flex items-center justify-between gap-2">
                     <span className="text-xs text-gray-600 w-8">{label}</span>
@@ -942,7 +946,11 @@ function CreateExamPage({
                 <span className="text-xs text-gray-500">합계: {getRatioSum(multipleRatio)}%</span>
               </div>
               <div className="space-y-2">
-                {[{ key: 'high', label: '상' }, { key: 'mid', label: '중' }, { key: 'low', label: '하' }] 
+                {([
+                  { key: 'high', label: '상' },
+                  { key: 'mid', label: '중' },
+                  { key: 'low', label: '하' },
+                ] as { key: keyof typeof multipleRatio; label: string }[])
                   .map(({ key, label }) => (
                   <div key={key} className="flex items-center justify-between gap-2">
                     <span className="text-xs text-gray-600 w-8">{label}</span>
@@ -969,7 +977,11 @@ function CreateExamPage({
                 <span className="text-xs text-gray-500">합계: {getRatioSum(descriptiveRatio)}%</span>
               </div>
               <div className="space-y-2">
-                {[{ key: 'high', label: '상' }, { key: 'mid', label: '중' }, { key: 'low', label: '하' }] 
+                {([
+                  { key: 'high', label: '상' },
+                  { key: 'mid', label: '중' },
+                  { key: 'low', label: '하' },
+                ] as { key: keyof typeof descriptiveRatio; label: string }[])
                   .map(({ key, label }) => (
                   <div key={key} className="flex items-center justify-between gap-2">
                     <span className="text-xs text-gray-600 w-8">{label}</span>
