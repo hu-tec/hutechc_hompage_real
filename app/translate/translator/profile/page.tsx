@@ -185,7 +185,7 @@ export default function TranslatorProfilePage() {
         <p className="text-sm text-gray-600 mb-6">희망하는 등급을 선택하세요. 선택 후 증명서를 제출하면 관리자가 검토합니다.</p>
 
         <div className="grid grid-cols-5 gap-3 mb-6">
-          {(Object.entries(LEVEL_INFO) as [TranslatorLevel, any][]).map(([key, info]) => (
+          {(Object.entries(LEVEL_INFO) as [TranslatorLevel, (typeof LEVEL_INFO)[TranslatorLevel]][]).map(([key, info]) => (
             <button
               key={key}
               onClick={() => handleLevelChange(key)}
@@ -204,7 +204,10 @@ export default function TranslatorProfilePage() {
         </div>
 
         <p className="text-xs text-gray-500 mb-4">
-          등급별 기준: {(Object.entries(LEVEL_INFO) as [TranslatorLevel, any][])
+          등급별 기준: {(Object.entries(LEVEL_INFO) as [
+            TranslatorLevel,
+            (typeof LEVEL_INFO)[TranslatorLevel],
+          ][])
             .map(([, info]) => info.desc)
             .join(' | ')}
         </p>

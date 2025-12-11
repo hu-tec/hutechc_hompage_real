@@ -38,7 +38,7 @@ export default function ExamStatusPage() {
       {drafts.length === 0 ? (
         <section className="flex flex-col items-center justify-center py-16 border border-dashed border-gray-200 rounded-lg bg-gray-50">
           <p className="text-gray-500 mb-2">아직 생성된 출제본이 없습니다.</p>
-          <p className="text-sm text-gray-400 mb-4">시험 관리에서 "출제하기" 버튼을 눌러 새로운 출제본을 생성하세요.</p>
+          <p className="text-sm text-gray-400 mb-4">시험 관리에서 &quot;출제하기&quot; 버튼을 눌러 새로운 출제본을 생성하세요.</p>
           <Link
             href="/admin/exams"
             className="px-4 py-2 rounded-md bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700"

@@ -17,6 +17,10 @@ interface Question {
   difficulty: string;
   category: string;
   answer?: string | number | null;
+  // 결과 보기 전용 필드들 (handleViewResult에서 주입)
+  myAnswer?: string | number | null;
+  modelAnswer?: string | null;
+  feedback?: string | null;
 }
 
 interface ExamData {
@@ -258,7 +262,7 @@ export default function QuestionBankPage() {
       })),
       hasFeedback: exam.hasFeedback
     };
-    setExamToView(sampleResult as any);
+    setExamToView(sampleResult);
   };
 
   if (examInProgress) {
@@ -949,7 +953,7 @@ function InProgressPage({ exams, onEnterExam }: { exams: ExamData[], onEnterExam
           </div>
         ) : (
           exams.map((exam) => {
-            const completed = exam.answers?.filter((a: any) => a !== null && a !== '').length || 0;
+            const completed = exam.answers?.filter((a) => a !== null && a !== '').length || 0;
             const totalQuestions = exam.questions.length;
             const createdDate = new Date(exam.createdAt).toLocaleString('ko-KR', {
               year: 'numeric',
@@ -1315,7 +1319,7 @@ function ExamPage({ exam, onExit, onSubmit }: { exam: ExamData, onExit: () => vo
 }
 
 // 결과 페이지 컴포넌트
-function ResultPage({ exam, onClose }: { exam: any, onClose: () => void }) {
+function ResultPage({ exam, onClose }: { exam: ExamData; onClose: () => void }) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
   const minutes = Math.floor((exam.timeSpent || 0) / 60);
@@ -1355,7 +1359,7 @@ function ResultPage({ exam, onClose }: { exam: any, onClose: () => void }) {
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">문제 목록</h3>
           <div className="flex flex-wrap gap-2">
-            {exam.questions.map((_: any, index: number) => (
+            {exam.questions.map((_, index: number) => (
               <button
                 key={index}
                 onClick={() => setCurrentQuestionIndex(index)}

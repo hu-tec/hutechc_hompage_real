@@ -175,7 +175,7 @@ export default function AdminExamsPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-1">시험 관리</h1>
             <p className="text-sm text-gray-600">
-              왼쪽 메뉴에서 "시험 출제하기"와 "출제한 시험 리스트"를 전환하여 시험을 설정하고 진행 상황을 확인합니다.
+              왼쪽 메뉴에서 &quot;시험 출제하기&quot;와 &quot;출제한 시험 리스트&quot;를 전환하여 시험을 설정하고 진행 상황을 확인합니다.
             </p>
           </div>
         </section>
@@ -215,8 +215,8 @@ export default function AdminExamsPage() {
                 <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center justify-between gap-6">
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900 mb-1">시험 출제 설정</h2>
-                    <p className="text-xs text-gray-600">
-                      시험 템플릿을 선택하고, 카테고리 · 문항 유형 · 일정 · 출제자를 설정한 뒤 "출시"를 눌러 출제자에게 전달합니다.
+                    <p className="text-sm text-gray-600 mb-2">
+                      시험 템플릿을 선택하고, 카테고리 · 문항 유형 · 일정 · 출제자를 설정한 뒤 &quot;출시&quot;를 눌러 출제자에게 전달합니다.
                     </p>
                   </div>
                   <div className="flex gap-3">
@@ -611,7 +611,7 @@ export default function AdminExamsPage() {
                   <div className="flex flex-col items-center justify-center py-16 border border-dashed border-gray-200 rounded-lg bg-gray-50">
                     <p className="text-gray-500 mb-2">아직 출시한 시험이 없습니다.</p>
                     <p className="text-xs text-gray-400 mb-4">
-                      상단 메뉴에서 "시험 출제하기"를 선택하고, 출시 버튼을 눌러 출제자를 배정할 시험을 생성하세요.
+                      상단 메뉴에서 &quot;시험 출제하기&quot;를 선택하고, 출시 버튼을 눌러 출제자를 배정할 시험을 생성하세요.
                     </p>
                   </div>
                 ) : (

@@ -29,8 +29,10 @@ const payments = [
   },
 ];
 
+type Payment = (typeof payments)[number];
+
 export default function PaymentsPage() {
-  const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
 
   return (
     <div className="max-w-7xl mx-auto">

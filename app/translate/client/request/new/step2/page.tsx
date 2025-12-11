@@ -328,7 +328,7 @@ export default function Step2Page() {
                   <button
                     key={m.id}
                     type="button"
-                    onClick={() => setMatchingMode(m.id as any)}
+                    onClick={() => setMatchingMode(m.id)}
                     className={`text-left border rounded-md px-3 py-3 transition-colors ${
                       matchingMode === m.id
                         ? 'border-indigo-500 bg-indigo-50'
@@ -341,7 +341,7 @@ export default function Step2Page() {
                 ))}
               </div>
               <p className="mt-2 text-[11px] text-gray-500">
-                ※ 이후 "내 의뢰 목록" 화면에서 직접 선택 / 자동매칭 결과 / 요청 수락 번역사 리스트를 기반으로 번역사를
+                ※ 이후 &quot;내 의뢰 목록&quot; 화면에서 직접 선택 / 자동매칭 결과 / 요청 수락 번역사 리스트를 기반으로 번역사를
                 확정합니다.
               </p>
             </section>
@@ -389,7 +389,7 @@ export default function Step2Page() {
                         name="translation-type"
                         value={t.id}
                         checked={translationTypeId === t.id}
-                        onChange={() => setTranslationTypeId(t.id as any)}
+                        onChange={() => setTranslationTypeId(t.id)}
                       />
                       <div>
                         <div className="font-semibold text-gray-900">{t.label}</div>
