@@ -22,6 +22,24 @@ export interface PriceSettings {
   // 긴급도 할증
   urgent1: number;
   urgent2: number;
+
+  // 매칭 방법별 추가 요금 (₩/단어 또는 건당)
+  match_direct: number; // 직접 찾기
+  match_request: number; // 매칭 요청
+  match_auto: number; // 자동 매칭
+  match_corporate: number; // 기타(기업)
+
+  // 결제 분류별 기본 단가 (₩/글자)
+  payment_point_per_char: number; // 포인트
+  payment_subscribe_per_char: number; // 구독
+  payment_oneoff_per_char: number; // 1회결제
+
+  // 결제 내용별 금액 (₩)
+  payment_point_charge: number; // 포인트 충전
+  payment_basic_sub: number; // 베이직 구독
+  payment_standard_sub: number; // 스탠다드 구독
+  payment_premium_sub: number; // 프리미엄 구독
+  payment_service_use: number; // 서비스 이용 (1회 결제)
 }
 
 interface PriceContextType {
@@ -47,6 +65,18 @@ const DEFAULT_PRICES: PriceSettings = {
   finance: 45,
   urgent1: 30,
   urgent2: 50,
+  match_direct: 0,
+  match_request: 0,
+  match_auto: 0,
+  match_corporate: 0,
+  payment_point_per_char: 0,
+  payment_subscribe_per_char: 0,
+  payment_oneoff_per_char: 0,
+  payment_point_charge: 0,
+  payment_basic_sub: 0,
+  payment_standard_sub: 0,
+  payment_premium_sub: 0,
+  payment_service_use: 0,
 };
 
 export function PriceProvider({ children }: { children: React.ReactNode }) {

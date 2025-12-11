@@ -375,6 +375,145 @@ export default function AdminPricingPage() {
             </div>
           </div>
 
+          {/* 4. 매칭/결제 관련 추가 요금 설정 */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* 4-1. 매칭 방법별 추가 요금 */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
+                4️⃣ 매칭 방법별 추가 요금
+              </h2>
+              <div className="space-y-4 text-sm">
+                <div>
+                  <div className="font-medium text-gray-800 mb-1">직접 찾기</div>
+                  <input
+                    type="number"
+                    value={prices.match_direct}
+                    onChange={(e) => handleChange('match_direct', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">기본 금액 대비 추가 요금 (₩ 또는 % 기준 자유)</p>
+                </div>
+                <div>
+                  <div className="font-medium text-gray-800 mb-1">매칭 요청</div>
+                  <input
+                    type="number"
+                    value={prices.match_request}
+                    onChange={(e) => handleChange('match_request', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <div className="font-medium text-gray-800 mb-1">자동 매칭</div>
+                  <input
+                    type="number"
+                    value={prices.match_auto}
+                    onChange={(e) => handleChange('match_auto', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <div className="font-medium text-gray-800 mb-1">기타(기업)</div>
+                  <input
+                    type="number"
+                    value={prices.match_corporate}
+                    onChange={(e) => handleChange('match_corporate', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 4-2. 결제 분류별 글자당 금액 */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
+                5️⃣ 결제 분류별 단가 (₩/글자)
+              </h2>
+              <div className="space-y-4 text-sm">
+                <div>
+                  <div className="font-medium text-gray-800 mb-1">포인트</div>
+                  <input
+                    type="number"
+                    value={prices.payment_point_per_char}
+                    onChange={(e) => handleChange('payment_point_per_char', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <div className="font-medium text-gray-800 mb-1">구독</div>
+                  <input
+                    type="number"
+                    value={prices.payment_subscribe_per_char}
+                    onChange={(e) => handleChange('payment_subscribe_per_char', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <div className="font-medium text-gray-800 mb-1">1회 결제</div>
+                  <input
+                    type="number"
+                    value={prices.payment_oneoff_per_char}
+                    onChange={(e) => handleChange('payment_oneoff_per_char', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 4-3. 결제 내용별 금액 */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
+                6️⃣ 결제 내용별 금액 (₩)
+              </h2>
+              <div className="space-y-4 text-sm">
+                <div>
+                  <div className="font-medium text-gray-800 mb-1">포인트 충전</div>
+                  <input
+                    type="number"
+                    value={prices.payment_point_charge}
+                    onChange={(e) => handleChange('payment_point_charge', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <div className="font-medium text-gray-800 mb-1">베이직 구독</div>
+                  <input
+                    type="number"
+                    value={prices.payment_basic_sub}
+                    onChange={(e) => handleChange('payment_basic_sub', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <div className="font-medium text-gray-800 mb-1">스탠다드 구독</div>
+                  <input
+                    type="number"
+                    value={prices.payment_standard_sub}
+                    onChange={(e) => handleChange('payment_standard_sub', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <div className="font-medium text-gray-800 mb-1">프리미엄 구독</div>
+                  <input
+                    type="number"
+                    value={prices.payment_premium_sub}
+                    onChange={(e) => handleChange('payment_premium_sub', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <div className="font-medium text-gray-800 mb-1">서비스 이용 (1회결제)</div>
+                  <input
+                    type="number"
+                    value={prices.payment_service_use}
+                    onChange={(e) => handleChange('payment_service_use', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* 저장 버튼 */}
           <div className="flex gap-3 justify-end">
             <button

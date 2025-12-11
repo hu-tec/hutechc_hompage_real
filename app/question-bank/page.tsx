@@ -355,32 +355,53 @@ interface CreateExamPageProps {
   onCreateExam: () => void;
 }
 
-// 카테고리 데이터 구조
+// 카테고리 데이터 구조 (마인드맵 기반)
+// 대분류: 문서, 영상, 음성, 이미지/디자인, 프로그램, 창의적활동, 자료 찾기, 특이
+// 중분류/소분류는 첨부된 마인드맵의 프롬프트 영역별·분야별 구조를 그대로 반영
 const categoryData: Record<string, Record<string, string[]>> = {
-  business: {
-    'PPT/프레젠테이션': ['제안서', '보고서', '회의자료'],
-    '문서/보고서': ['계약서', '이메일', '사내문서'],
-    '이메일/서신': ['비즈니스 메일', '공문', '제안서'],
-    '계약서/법률': ['계약서', '약관', '법률문서']
+  '문서': {
+    // 일반 문서
+    '일반': ['PPT', '엑셀', '기획서'],
+    // 법률 문서
+    '법률': ['소송장', '준비서면', '형사', '민사'],
+    // 전문 문서
+    '전문': ['의료', '특허', '노무'],
+    // 노무 세부
+    '노무': ['근로계약', '사직서'],
   },
-  academic: {
-    '논문/저널': ['연구논문', '문헌고찰', '학술기사'],
-    '연구보고서': ['연구계획서', '결과보고서', '중간보고서'],
-    '학위논문': ['학사논문', '석사논문', '박사논문'],
-    '교재/참고서': ['교과서', '학습지', '참고서적']
+  '영상': {
+    // 프롬프트 마인드맵의 영상 분기
+    '영상': ['유튜브', '다큐멘터리'],
   },
-  culture: {
-    '기사/리뷰': ['뉴스기사', '블로그', '리뷰'],
-    '문학/소설': ['소설', '에세이', '시'],
-    '영상/자막': ['영화자막', '드라마자막', '다큐멘터리'],
-    '웹툰/만화': ['웹툰', '만화', '그래픽노벨']
+  '음성': {
+    // 음성/아나운서 등
+    '음성': ['아나운서', '관광가이드', '큐레이터', '안내', '강의'],
   },
-  science: {
-    'IT/기술문서': ['기술사양서', 'API문서', '매뉴얼'],
-    '의학/약학': ['의학논문', '약품정보', '임상시험'],
-    '공학/건축': ['설계도면', '시방서', '기술보고서'],
-    '자연과학': ['연구논문', '실험보고서', '과학기사']
-  }
+  '이미지/디자인': {
+    // 이미지/디자인 분기
+    '홍보물': ['브로셔', '포스터'],
+    '시안': ['로고', '홈페이지'],
+    'SNS': [],
+    '그림': [],
+  },
+  '프로그램': {
+    // 프로그램/코딩
+    '프로그램': ['코딩'],
+  },
+  '창의적활동': {
+    // 창의적활동 분기
+    '창의적활동': ['드라마', '웹툰소설', '소설', '시', '작곡'],
+  },
+  '자료 찾기': {
+    // 자료 찾기 - 건강/돈/사람
+    '건강': ['건강', '암', '요리'],
+    '돈': ['재무', '주식', '부동산'],
+    '사람': ['자녀', '연애', '입시', '사주', '결혼', '영어', '직장찾기', '취업'],
+  },
+  '특이': {
+    // 특이 영역
+    '특이': ['웹툰', '고전', '시', '음악'],
+  },
 };
 
 function CreateExamPage({
@@ -394,16 +415,73 @@ function CreateExamPage({
   estimatedTime,
   onCreateExam,
 }: CreateExamPageProps) {
-  const [examType, setExamType] = useState('all');
+  // 기본값: AI번역
+  const [examType, setExamType] = useState('ai-translation');
   const [language, setLanguage] = useState('all');
   const [difficulties, setDifficulties] = useState(['beginner', 'intermediate', 'advanced']);
   const [grades, setGrades] = useState(['1', '2', '3']);
+
+  // 문제 유형별 난이도 비중 (상/중/하)
+  const [subjectiveRatio, setSubjectiveRatio] = useState({ high: 34, mid: 33, low: 33 });
+  const [multipleRatio, setMultipleRatio] = useState({ high: 34, mid: 33, low: 33 });
+  const [descriptiveRatio, setDescriptiveRatio] = useState({ high: 34, mid: 33, low: 33 });
+
+  // 문제 유형별 영역 비중 (문서/영상/..., 또는 문서 > 법률 같이 선택된 유형 경로별)
+  const [subjectiveCategoryRatio, setSubjectiveCategoryRatio] = useState<Record<string, number>>({});
+  const [multipleCategoryRatio, setMultipleCategoryRatio] = useState<Record<string, number>>({});
+  const [descriptiveCategoryRatio, setDescriptiveCategoryRatio] = useState<Record<string, number>>({});
   const [selectedMajor, setSelectedMajor] = useState<string[]>([]);
   const [selectedMiddle, setSelectedMiddle] = useState<Record<string, string[]>>({});
   const [selectedMinor, setSelectedMinor] = useState<Record<string, string[]>>({});
   const [excludeSolved, setExcludeSolved] = useState(false);
   const [excludeCorrect, setExcludeCorrect] = useState(false);
   const [onlyWrong, setOnlyWrong] = useState(false);
+
+  const getRatioSum = (r: { high: number; mid: number; low: number }) => r.high + r.mid + r.low;
+  const hasInvalidRatio =
+    getRatioSum(subjectiveRatio) > 100 ||
+    getRatioSum(multipleRatio) > 100 ||
+    getRatioSum(descriptiveRatio) > 100;
+
+  // 선택된 대분류/중분류/소분류를 기반으로 "문서", "문서 > 법률", "자료 찾기 > 사람 > 자녀" 형태의 경로 라벨 생성
+  const getActiveCategoryKeys = (): string[] => {
+    const keys: string[] = [];
+
+    selectedMajor.forEach((major) => {
+      const middles = selectedMiddle[major] || [];
+
+      if (middles.length === 0) {
+        keys.push(major);
+        return;
+      }
+
+      middles.forEach((middle) => {
+        const minorKey = `${major}-${middle}`;
+        const minors = selectedMinor[minorKey] || [];
+
+        if (minors.length === 0) {
+          keys.push(`${major} > ${middle}`);
+        } else {
+          minors.forEach((minor) => {
+            keys.push(`${major} > ${middle} > ${minor}`);
+          });
+        }
+      });
+    });
+
+    return keys;
+  };
+
+  const getCategoryRatioSum = (ratioMap: Record<string, number>, keys: string[]) =>
+    keys.reduce((sum, key) => sum + (ratioMap[key] || 0), 0);
+
+  const activeCategoryKeys = getActiveCategoryKeys();
+
+  const hasInvalidCategoryRatio = activeCategoryKeys.length > 0 && (
+    getCategoryRatioSum(subjectiveCategoryRatio, activeCategoryKeys) > 100 ||
+    getCategoryRatioSum(multipleCategoryRatio, activeCategoryKeys) > 100 ||
+    getCategoryRatioSum(descriptiveCategoryRatio, activeCategoryKeys) > 100
+  );
 
   const toggleDifficulty = (diff: string) => {
     setDifficulties(prev =>
@@ -501,7 +579,8 @@ function CreateExamPage({
   };
 
   const resetForm = () => {
-    setExamType('all');
+    // 초기 상태로 리셋 (AI번역)
+    setExamType('ai-translation');
     setLanguage('all');
     setDifficulties(['beginner', 'intermediate', 'advanced']);
     setGrades(['1', '2', '3']);
@@ -514,6 +593,12 @@ function CreateExamPage({
     setSubjectiveCount(3);
     setMultipleCount(4);
     setDescriptiveCount(3);
+    setSubjectiveRatio({ high: 34, mid: 33, low: 33 });
+    setMultipleRatio({ high: 34, mid: 33, low: 33 });
+    setDescriptiveRatio({ high: 34, mid: 33, low: 33 });
+    setSubjectiveCategoryRatio({});
+    setMultipleCategoryRatio({});
+    setDescriptiveCategoryRatio({});
   };
 
   return (
@@ -539,9 +624,10 @@ function CreateExamPage({
               onChange={(e) => setExamType(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">전체</option>
-              <option value="translation">번역 시험</option>
-              <option value="prompt">프롬프트 시험</option>
+              <option value="ai-translation">AI번역</option>
+              <option value="prompt">프롬프트</option>
+              <option value="itt">ITT 시험</option>
+              <option value="ethics">윤리시험</option>
             </select>
           </div>
 
@@ -607,10 +693,14 @@ function CreateExamPage({
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <div className="flex flex-wrap gap-3 mb-4">
               {[
-                { value: 'business', label: '비즈니스' },
-                { value: 'academic', label: '학술/연구' },
-                { value: 'culture', label: '문화/컨텐츠' },
-                { value: 'science', label: '과학/기술' },
+                { value: '문서', label: '문서' },
+                { value: '영상', label: '영상' },
+                { value: '음성', label: '음성' },
+                { value: '이미지/디자인', label: '이미지/디자인' },
+                { value: '프로그램', label: '프로그램' },
+                { value: '창의적활동', label: '창의적활동' },
+                { value: '자료 찾기', label: '자료 찾기' },
+                { value: '특이', label: '특이' },
               ].map((cat) => (
                 <label 
                   key={cat.value} 
@@ -635,12 +725,7 @@ function CreateExamPage({
             {selectedMajor.length > 0 && (
               <div className="space-y-4">
                 {selectedMajor.map(major => {
-                  const majorLabel = {
-                    business: '비즈니스',
-                    academic: '학술/연구',
-                    culture: '문화/컨텐츠',
-                    science: '과학/기술'
-                  }[major];
+                  const majorLabel = major; // 대분류 라벨은 그대로 사용 (문서/영상/이미지·디자인 등)
 
                   return (
                     <div key={major} className="bg-white rounded-lg p-4 border border-gray-200">
@@ -677,6 +762,10 @@ function CreateExamPage({
                       {selectedMiddle[major]?.map(middle => {
                         const minorKey = `${major}-${middle}`;
                         const minors = categoryData[major]?.[middle] || [];
+
+                        // 소분류가 아예 정의되지 않은 중분류라면(배열 길이 0),
+                        // 소분류 선택 영역 자체를 표시하지 않는다.
+                        if (!minors.length) return null;
                         
                         return (
                           <div key={middle} className="mt-3 pl-4 border-l-2 border-blue-200">
@@ -810,6 +899,215 @@ function CreateExamPage({
         </div>
         </div>
 
+        {/* 난이도 비중 설정 */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-gray-700">난이도 비중 설정 (상·중·하, 각 유형별 합계 100% 이하여야 함)</label>
+            {hasInvalidRatio && (
+              <span className="text-xs text-red-600 font-medium">난이도 비중 합계가 100%를 초과한 유형이 있습니다.</span>
+            )}
+          </div>
+          <div className="grid grid-cols-3 gap-6">
+            {/* 주관식 비중 */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-gray-800">주관식</span>
+                <span className="text-xs text-gray-500">합계: {getRatioSum(subjectiveRatio)}%</span>
+              </div>
+              <div className="space-y-2">
+                {[{ key: 'high', label: '상' }, { key: 'mid', label: '중' }, { key: 'low', label: '하' }] 
+                  .map(({ key, label }) => (
+                  <div key={key} className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-gray-600 w-8">{label}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={subjectiveRatio[key]}
+                      onChange={(e) =>
+                        setSubjectiveRatio((prev) => ({ ...prev, [key]: Number(e.target.value) || 0 }))
+                      }
+                      className="w-20 px-2 py-1 border border-gray-300 rounded-md text-right text-sm"
+                    />
+                    <span className="text-xs text-gray-500">%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 객관식 비중 */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-gray-800">객관식</span>
+                <span className="text-xs text-gray-500">합계: {getRatioSum(multipleRatio)}%</span>
+              </div>
+              <div className="space-y-2">
+                {[{ key: 'high', label: '상' }, { key: 'mid', label: '중' }, { key: 'low', label: '하' }] 
+                  .map(({ key, label }) => (
+                  <div key={key} className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-gray-600 w-8">{label}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={multipleRatio[key]}
+                      onChange={(e) =>
+                        setMultipleRatio((prev) => ({ ...prev, [key]: Number(e.target.value) || 0 }))
+                      }
+                      className="w-20 px-2 py-1 border border-gray-300 rounded-md text-right text-sm"
+                    />
+                    <span className="text-xs text-gray-500">%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 서술형 비중 */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-gray-800">서술형</span>
+                <span className="text-xs text-gray-500">합계: {getRatioSum(descriptiveRatio)}%</span>
+              </div>
+              <div className="space-y-2">
+                {[{ key: 'high', label: '상' }, { key: 'mid', label: '중' }, { key: 'low', label: '하' }] 
+                  .map(({ key, label }) => (
+                  <div key={key} className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-gray-600 w-8">{label}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={descriptiveRatio[key]}
+                      onChange={(e) =>
+                        setDescriptiveRatio((prev) => ({ ...prev, [key]: Number(e.target.value) || 0 }))
+                      }
+                      className="w-20 px-2 py-1 border border-gray-300 rounded-md text-right text-sm"
+                    />
+                    <span className="text-xs text-gray-500">%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+        </div>
+        </div>
+
+        {/* 문제 유형별 영역 비중 설정 */}
+        {activeCategoryKeys.length > 0 && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">
+                문제 유형 비중 설정 (선택한 영역 기준, 각 유형별 합계 100% 이하여야 함)
+              </label>
+              {hasInvalidCategoryRatio && (
+                <span className="text-xs text-red-600 font-medium">
+                  문제 유형 비중 합계가 100%를 초과한 유형이 있습니다.
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-3 gap-6">
+              {/* 주관식 영역 비중 */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-gray-800">주관식</span>
+                  <span className="text-xs text-gray-500">
+                    합계: {getCategoryRatioSum(subjectiveCategoryRatio, activeCategoryKeys)}%
+                  </span>
+                </div>
+                <div className="space-y-2 max-h-48 overflow-auto pr-1">
+                  {activeCategoryKeys.map((key) => (
+                    <div key={key} className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-gray-600 truncate flex-1" title={key}>
+                        {key}
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={subjectiveCategoryRatio[key] ?? 0}
+                        onChange={(e) =>
+                          setSubjectiveCategoryRatio((prev) => ({
+                            ...prev,
+                            [key]: Number(e.target.value) || 0,
+                          }))
+                        }
+                        className="w-20 px-2 py-1 border border-gray-300 rounded-md text-right text-sm"
+                      />
+                      <span className="text-xs text-gray-500">%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 객관식 영역 비중 */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-gray-800">객관식</span>
+                  <span className="text-xs text-gray-500">
+                    합계: {getCategoryRatioSum(multipleCategoryRatio, activeCategoryKeys)}%
+                  </span>
+                </div>
+                <div className="space-y-2 max-h-48 overflow-auto pr-1">
+                  {activeCategoryKeys.map((key) => (
+                    <div key={key} className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-gray-600 truncate flex-1" title={key}>
+                        {key}
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={multipleCategoryRatio[key] ?? 0}
+                        onChange={(e) =>
+                          setMultipleCategoryRatio((prev) => ({
+                            ...prev,
+                            [key]: Number(e.target.value) || 0,
+                          }))
+                        }
+                        className="w-20 px-2 py-1 border border-gray-300 rounded-md text-right text-sm"
+                      />
+                      <span className="text-xs text-gray-500">%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 서술형 영역 비중 */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-gray-800">서술형</span>
+                  <span className="text-xs text-gray-500">
+                    합계: {getCategoryRatioSum(descriptiveCategoryRatio, activeCategoryKeys)}%
+                  </span>
+                </div>
+                <div className="space-y-2 max-h-48 overflow-auto pr-1">
+                  {activeCategoryKeys.map((key) => (
+                    <div key={key} className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-gray-600 truncate flex-1" title={key}>
+                        {key}
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={descriptiveCategoryRatio[key] ?? 0}
+                        onChange={(e) =>
+                          setDescriptiveCategoryRatio((prev) => ({
+                            ...prev,
+                            [key]: Number(e.target.value) || 0,
+                          }))
+                        }
+                        className="w-20 px-2 py-1 border border-gray-300 rounded-md text-right text-sm"
+                      />
+                      <span className="text-xs text-gray-500">%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 선택된 조건 미리보기 */}
         <div className="bg-blue-50 rounded-lg p-4">
           <h3 className="text-sm font-semibold text-gray-900 mb-2">선택된 조건</h3>
@@ -818,7 +1116,15 @@ function CreateExamPage({
           <div className="flex gap-2 flex-wrap">
             {/* 시험 유형 */}
             <span className="px-3 py-1 bg-white rounded-full text-sm text-gray-700">
-              {examType === 'all' ? '전체 유형' : examType === 'translation' ? '번역 시험' : '프롬프트 시험'}
+              {examType === 'ai-translation'
+                ? 'AI번역'
+                : examType === 'prompt'
+                ? '프롬프트'
+                : examType === 'itt'
+                ? 'ITT 시험'
+                : examType === 'ethics'
+                ? '윤리시험'
+                : ''}
             </span>
             
             {/* 언어선택 */}
@@ -843,12 +1149,7 @@ function CreateExamPage({
             {selectedMajor.length > 0 && (
             <div className="flex gap-2 flex-wrap">
             {selectedMajor.map(major => {
-              const majorLabel = {
-                business: '비즈니스',
-                academic: '학술/연구',
-                culture: '문화/컨텐츠',
-                science: '과학/기술'
-              }[major];
+              const majorLabel = major;
 
               const middles = selectedMiddle[major] || [];
               
@@ -922,7 +1223,12 @@ function CreateExamPage({
           </button>
           <button 
             onClick={onCreateExam}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+            disabled={hasInvalidRatio || hasInvalidCategoryRatio}
+            className={`px-6 py-3 rounded-lg transition-colors font-semibold ${
+              hasInvalidRatio || hasInvalidCategoryRatio
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
           >
             🎯 시험 생성하고 시작하기
           </button>
