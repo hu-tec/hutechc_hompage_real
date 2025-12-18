@@ -23,6 +23,12 @@ export default function AdminPricingPage() {
     removeLanguage,
   } = useLanguageConfig();
   const [saved, setSaved] = useState(false);
+  const [priceTableType, setPriceTableType] = useState<'client' | 'translator'>('client');
+  const [selectedLargeCategory, setSelectedLargeCategory] = useState<string | null>(null);
+  const [selectedMidCategory, setSelectedMidCategory] = useState<string | null>(null);
+  
+  // 현재 선택된 가격표 (의뢰자 또는 번역사)
+  const currentPrices = priceTableType === 'client' ? prices.clientPrices : prices.translatorPrices;
 
   const handleAddLanguage = (tier: LanguageTier) => {
     const code = window.prompt('언어 코드를 입력하세요 (예: es)');
@@ -58,6 +64,219 @@ export default function AdminPricingPage() {
     setSaved(true);
   };
 
+  // 소 카테고리 추가
+  const handleAddSmallCategory = (midCategoryKey: string) => {
+    const name = window.prompt('소 카테고리 이름을 입력하세요');
+    if (!name || !name.trim()) return;
+    
+    const currentSmall = currentPrices.category_small || {};
+    const midCategory = currentSmall[midCategoryKey] || {};
+    
+    const priceKey = priceTableType === 'client' ? 'clientPrices' : 'translatorPrices';
+    updatePrices({
+      [priceKey]: {
+        category_small: {
+          ...currentSmall,
+          [midCategoryKey]: {
+            ...midCategory,
+            [name.trim()]: 0,
+          },
+        },
+      },
+    });
+    setSaved(false);
+  };
+
+  // 소 카테고리 삭제
+  const handleRemoveSmallCategory = (midCategoryKey: string, smallCategoryName: string) => {
+    if (!window.confirm(`"${smallCategoryName}" 소 카테고리를 삭제하시겠습니까?`)) return;
+    
+    const currentSmall = currentPrices.category_small || {};
+    const midCategory = { ...(currentSmall[midCategoryKey] || {}) };
+    delete midCategory[smallCategoryName];
+    
+    const priceKey = priceTableType === 'client' ? 'clientPrices' : 'translatorPrices';
+    updatePrices({
+      [priceKey]: {
+        category_small: {
+          ...currentSmall,
+          [midCategoryKey]: midCategory,
+        },
+      },
+    });
+    setSaved(false);
+  };
+
+  // 소 카테고리 가격 변경
+  const handleChangeSmallCategory = (midCategoryKey: string, smallCategoryName: string, value: number) => {
+    const currentSmall = currentPrices.category_small || {};
+    const midCategory = { ...(currentSmall[midCategoryKey] || {}) };
+    midCategory[smallCategoryName] = value;
+    
+    const priceKey = priceTableType === 'client' ? 'clientPrices' : 'translatorPrices';
+    updatePrices({
+      [priceKey]: {
+        category_small: {
+          ...currentSmall,
+          [midCategoryKey]: midCategory,
+        },
+      },
+    });
+    setSaved(false);
+  };
+
+  // 대 카테고리 추가
+  const handleAddLargeCategory = () => {
+    const name = window.prompt('대 카테고리 이름을 입력하세요');
+    if (!name || !name.trim()) return;
+    
+    const icon = window.prompt('아이콘을 입력하세요 (예: 📹, 🎤)') || '📁';
+    const key = `large_${Date.now()}`;
+    
+    const currentLarge = currentPrices.category_large || {};
+    const priceKey = priceTableType === 'client' ? 'clientPrices' : 'translatorPrices';
+    updatePrices({
+      [priceKey]: {
+        category_large: {
+          ...currentLarge,
+          [key]: {
+            name: name.trim(),
+            icon: icon.trim(),
+            price: 0,
+          },
+        },
+      },
+    });
+    setSaved(false);
+  };
+
+  // 대 카테고리 삭제
+  const handleRemoveLargeCategory = (largeKey: string) => {
+    if (!window.confirm(`"${currentPrices.category_large[largeKey]?.name}" 대 카테고리를 삭제하시겠습니까? 하위 카테고리도 모두 삭제됩니다.`)) return;
+    
+    const currentLarge = { ...(currentPrices.category_large || {}) };
+    delete currentLarge[largeKey];
+    
+    // 해당 대 카테고리의 중 카테고리도 삭제
+    const currentMid = { ...(currentPrices.category_mid || {}) };
+    delete currentMid[largeKey];
+    
+    // 해당 대 카테고리의 중 카테고리에 속한 소 카테고리도 삭제
+    const currentSmall = { ...(currentPrices.category_small || {}) };
+    if (currentPrices.category_mid?.[largeKey]) {
+      Object.keys(currentPrices.category_mid[largeKey]).forEach((midKey) => {
+        delete currentSmall[midKey];
+      });
+    }
+    
+    const priceKey = priceTableType === 'client' ? 'clientPrices' : 'translatorPrices';
+    updatePrices({
+      [priceKey]: {
+        category_large: currentLarge,
+        category_mid: currentMid,
+        category_small: currentSmall,
+      },
+    });
+    
+    if (selectedLargeCategory === largeKey) {
+      setSelectedLargeCategory(null);
+      setSelectedMidCategory(null);
+    }
+    setSaved(false);
+  };
+
+  // 대 카테고리 가격 변경
+  const handleChangeLargeCategoryPrice = (largeKey: string, value: number) => {
+    const currentLarge = { ...(currentPrices.category_large || {}) };
+    if (currentLarge[largeKey]) {
+      currentLarge[largeKey] = {
+        ...currentLarge[largeKey],
+        price: value,
+      };
+      const priceKey = priceTableType === 'client' ? 'clientPrices' : 'translatorPrices';
+      updatePrices({
+        [priceKey]: {
+          category_large: currentLarge,
+        },
+      });
+      setSaved(false);
+    }
+  };
+
+  // 중 카테고리 추가
+  const handleAddMidCategory = (largeKey: string) => {
+    const name = window.prompt('중 카테고리 이름을 입력하세요');
+    if (!name || !name.trim()) return;
+    
+    const key = `mid_${largeKey}_${Date.now()}`;
+    const currentMid = currentPrices.category_mid || {};
+    const largeMid = currentMid[largeKey] || {};
+    
+    const priceKey = priceTableType === 'client' ? 'clientPrices' : 'translatorPrices';
+    updatePrices({
+      [priceKey]: {
+        category_mid: {
+          ...currentMid,
+          [largeKey]: {
+            ...largeMid,
+            [key]: {
+              name: name.trim(),
+              price: 0,
+            },
+          },
+        },
+      },
+    });
+    setSaved(false);
+  };
+
+  // 중 카테고리 삭제
+  const handleRemoveMidCategory = (largeKey: string, midKey: string) => {
+    if (!window.confirm(`"${currentPrices.category_mid[largeKey]?.[midKey]?.name}" 중 카테고리를 삭제하시겠습니까? 하위 소 카테고리도 모두 삭제됩니다.`)) return;
+    
+    const currentMid = { ...(currentPrices.category_mid || {}) };
+    const largeMid = { ...(currentMid[largeKey] || {}) };
+    delete largeMid[midKey];
+    currentMid[largeKey] = largeMid;
+    
+    // 해당 중 카테고리의 소 카테고리도 삭제
+    const currentSmall = { ...(currentPrices.category_small || {}) };
+    delete currentSmall[midKey];
+    
+    const priceKey = priceTableType === 'client' ? 'clientPrices' : 'translatorPrices';
+    updatePrices({
+      [priceKey]: {
+        category_mid: currentMid,
+        category_small: currentSmall,
+      },
+    });
+    
+    if (selectedMidCategory === midKey) {
+      setSelectedMidCategory(null);
+    }
+    setSaved(false);
+  };
+
+  // 중 카테고리 가격 변경
+  const handleChangeMidCategoryPrice = (largeKey: string, midKey: string, value: number) => {
+    const currentMid = { ...(currentPrices.category_mid || {}) };
+    const largeMid = { ...(currentMid[largeKey] || {}) };
+    if (largeMid[midKey]) {
+      largeMid[midKey] = {
+        ...largeMid[midKey],
+        price: value,
+      };
+      currentMid[largeKey] = largeMid;
+      const priceKey = priceTableType === 'client' ? 'clientPrices' : 'translatorPrices';
+      updatePrices({
+        [priceKey]: {
+          category_mid: currentMid,
+        },
+      });
+      setSaved(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -74,6 +293,43 @@ export default function AdminPricingPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">가격 설정</h1>
           <p className="text-gray-600">번역 서비스의 모든 가격을 관리하세요</p>
+        </div>
+
+        {/* 가격표 타입 선택 탭 */}
+        <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-gray-700">가격표 타입:</span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setPriceTableType('client');
+                  setSelectedLargeCategory(null);
+                  setSelectedMidCategory(null);
+                }}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  priceTableType === 'client'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                의뢰자 가격표
+              </button>
+              <button
+                onClick={() => {
+                  setPriceTableType('translator');
+                  setSelectedLargeCategory(null);
+                  setSelectedMidCategory(null);
+                }}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  priceTableType === 'translator'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                번역사 가격표
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="space-y-8">
@@ -509,6 +765,207 @@ export default function AdminPricingPage() {
                     onChange={(e) => handleChange('payment_service_use', Number(e.target.value))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 7. 카테고리별 추가 요금 */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
+              7️⃣ 카테고리별 추가 요금 (₩/단어 또는 %)
+            </h2>
+            <p className="text-sm text-gray-600 mb-6">
+              AI번역 서비스의 카테고리별 추가 요금을 설정합니다. 트리 형식으로 대 → 중 → 소 카테고리를 선택하여 가격을 설정하세요.
+            </p>
+
+            {/* 트리 형식 3단 레이아웃 */}
+            <div className="flex gap-4 h-[600px] border border-gray-200 rounded-lg overflow-hidden">
+              {/* 왼쪽: 대 카테고리 */}
+              <div className="w-1/3 border-r border-gray-200 bg-gray-50 flex flex-col">
+                <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900">대 카테고리</h3>
+                  <button
+                    onClick={handleAddLargeCategory}
+                    className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    + 추가
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {currentPrices.category_large && Object.keys(currentPrices.category_large).length > 0 ? (
+                    Object.entries(currentPrices.category_large).map(([key, category]) => (
+                      <div
+                        key={key}
+                        className={`p-4 border-b border-gray-200 cursor-pointer transition-colors ${
+                          selectedLargeCategory === key
+                            ? 'bg-blue-100 border-blue-300'
+                            : 'bg-white hover:bg-gray-50'
+                        }`}
+                        onClick={() => {
+                          setSelectedLargeCategory(key);
+                          setSelectedMidCategory(null);
+                        }}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="font-medium text-gray-900">
+                            {category.icon} {category.name}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveLargeCategory(key);
+                            }}
+                            className="text-xs text-red-600 hover:text-red-800"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-gray-600">가격:</label>
+                          <input
+                            type="number"
+                            value={category.price}
+                            onChange={(e) => {
+                              handleChangeLargeCategoryPrice(key, Number(e.target.value));
+                              e.stopPropagation();
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="기본 가격"
+                          />
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-sm text-gray-500 text-center">대 카테고리가 없습니다</div>
+                  )}
+                </div>
+              </div>
+
+              {/* 중간: 중 카테고리 */}
+              <div className="w-1/3 border-r border-gray-200 bg-gray-50 flex flex-col">
+                <div className="p-4 border-b border-gray-200 bg-white">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900">중 카테고리</h3>
+                    {selectedLargeCategory && (
+                      <button
+                        onClick={() => handleAddMidCategory(selectedLargeCategory)}
+                        className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                      >
+                        + 추가
+                      </button>
+                    )}
+                  </div>
+                  {selectedLargeCategory && currentPrices.category_large[selectedLargeCategory] && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {currentPrices.category_large[selectedLargeCategory].icon} {currentPrices.category_large[selectedLargeCategory].name} 선택됨
+                    </p>
+                  )}
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {!selectedLargeCategory ? (
+                    <div className="p-4 text-sm text-gray-500 text-center">대 카테고리를 선택하세요</div>
+                  ) : currentPrices.category_mid?.[selectedLargeCategory] && Object.keys(currentPrices.category_mid[selectedLargeCategory]).length > 0 ? (
+                    Object.entries(currentPrices.category_mid[selectedLargeCategory]).map(([key, category]) => (
+                      <div
+                        key={key}
+                        className={`p-4 border-b border-gray-200 cursor-pointer transition-colors ${
+                          selectedMidCategory === key
+                            ? 'bg-blue-100 border-blue-300'
+                            : 'bg-white hover:bg-gray-50'
+                        }`}
+                        onClick={() => setSelectedMidCategory(key)}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="font-medium text-gray-900">{category.name}</div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveMidCategory(selectedLargeCategory, key);
+                            }}
+                            className="text-xs text-red-600 hover:text-red-800"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-gray-600">추가 가격:</label>
+                          <input
+                            type="number"
+                            value={category.price}
+                            onChange={(e) => {
+                              handleChangeMidCategoryPrice(selectedLargeCategory, key, Number(e.target.value));
+                              e.stopPropagation();
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="추가 가격"
+                          />
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-sm text-gray-500 text-center">중 카테고리가 없습니다</div>
+                  )}
+                </div>
+              </div>
+
+              {/* 오른쪽: 소 카테고리 */}
+              <div className="w-1/3 bg-gray-50 flex flex-col">
+                <div className="p-4 border-b border-gray-200 bg-white">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900">소 카테고리</h3>
+                    {selectedMidCategory && (
+                      <button
+                        onClick={() => handleAddSmallCategory(selectedMidCategory)}
+                        className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                      >
+                        + 추가
+                      </button>
+                    )}
+                  </div>
+                  {selectedMidCategory && (
+                    <p className="text-xs text-gray-500 mt-1">중 카테고리 선택됨</p>
+                  )}
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {!selectedMidCategory ? (
+                    <div className="p-4 text-sm text-gray-500 text-center">중 카테고리를 선택하세요</div>
+                  ) : (
+                    <div className="p-4 space-y-3">
+                      {currentPrices.category_small?.[selectedMidCategory] && Object.keys(currentPrices.category_small[selectedMidCategory]).length > 0 ? (
+                        Object.entries(currentPrices.category_small[selectedMidCategory]).map(([smallName, smallPrice]) => (
+                          <div key={smallName} className="bg-white border border-gray-200 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="font-medium text-sm text-gray-900">{smallName}</div>
+                              <button
+                                onClick={() => handleRemoveSmallCategory(selectedMidCategory, smallName)}
+                                className="text-xs text-red-600 hover:text-red-800"
+                              >
+                                삭제
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs text-gray-600">가격:</label>
+                              <input
+                                type="number"
+                                value={smallPrice}
+                                onChange={(e) => handleChangeSmallCategory(selectedMidCategory, smallName, Number(e.target.value))}
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="가격"
+                              />
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-gray-500 text-center py-8">
+                          소 카테고리가 없습니다.<br />
+                          위의 "+ 추가" 버튼을 클릭하여 추가하세요.
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

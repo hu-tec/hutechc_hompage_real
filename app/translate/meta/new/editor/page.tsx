@@ -52,6 +52,9 @@ export default function MetaTranslationEditorPage() {
   const [selectedTranslator, setSelectedTranslator] = useState<string>('chatgpt');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('en');
 
+  // 선택된 탭들 (원문, AI 답변, 에디터, 최종 수정본) - 여러 개 동시 선택 가능
+  const [activeTabs, setActiveTabs] = useState<Set<string>>(new Set(['original', 'ai', 'editor', 'final']));
+
   // 원문 내용
   const [originalContent, setOriginalContent] = useState<string>('');
   // AI 답변 내용
@@ -399,19 +402,81 @@ export default function MetaTranslationEditorPage() {
         </div>
         <div className="flex items-center gap-4">
           <div className="flex gap-1 bg-gray-700 rounded-md p-1">
-            {AI_TRANSLATORS.map((translator) => (
-              <button
-                key={translator.id}
-                onClick={() => setSelectedTranslator(translator.id)}
-                className={`px-3 py-1 text-xs rounded transition-colors ${
-                  selectedTranslator === translator.id
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                {translator.label}
-              </button>
-            ))}
+            <button
+              onClick={() => {
+                const newTabs = new Set(activeTabs);
+                if (newTabs.has('original')) {
+                  newTabs.delete('original');
+                } else {
+                  newTabs.add('original');
+                }
+                setActiveTabs(newTabs);
+              }}
+              className={`px-3 py-1 text-xs rounded transition-colors ${
+                activeTabs.has('original')
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              원문
+            </button>
+            <button
+              onClick={() => {
+                const newTabs = new Set(activeTabs);
+                if (newTabs.has('ai')) {
+                  newTabs.delete('ai');
+                } else {
+                  newTabs.add('ai');
+                }
+                setActiveTabs(newTabs);
+              }}
+              className={`px-3 py-1 text-xs rounded transition-colors ${
+                activeTabs.has('ai')
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              AI 프롬프트질문에 따른 답변 내용
+            </button>
+            <button
+              onClick={() => {
+                const newTabs = new Set(activeTabs);
+                if (newTabs.has('editor')) {
+                  newTabs.delete('editor');
+                } else {
+                  newTabs.add('editor');
+                }
+                setActiveTabs(newTabs);
+              }}
+              className={`px-3 py-1 text-xs rounded transition-colors ${
+                activeTabs.has('editor')
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              에디터
+            </button>
+            <button
+              onClick={() => {
+                const newTabs = new Set(activeTabs);
+                if (newTabs.has('final')) {
+                  newTabs.delete('final');
+                } else {
+                  if (!showFinalResult) {
+                    handleSave();
+                  }
+                  newTabs.add('final');
+                }
+                setActiveTabs(newTabs);
+              }}
+              className={`px-3 py-1 text-xs rounded transition-colors ${
+                activeTabs.has('final')
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              최종 수정본
+            </button>
           </div>
           <select
             className="bg-gray-700 border border-gray-600 rounded-md px-3 py-1 text-xs text-white"
@@ -457,9 +522,10 @@ export default function MetaTranslationEditorPage() {
         </div>
       </header>
 
-      {/* Main Layout - 3 or 4 Panels */}
+      {/* Main Layout - Tab-based Panels */}
       <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Left Panel - Original Text */}
+        {activeTabs.has('original') && (
         <div className="flex-1 border-r border-gray-700 bg-gray-50 flex flex-col min-h-0">
           <div className="bg-white border-b border-gray-200 p-3 flex items-center justify-between">
             <h3 className="text-xs font-bold text-gray-900">원문- 작성한 내용이나 없는경우 프롬프트 작성한 내용</h3>
@@ -519,8 +585,10 @@ export default function MetaTranslationEditorPage() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Middle Panel - AI Response */}
+        {activeTabs.has('ai') && (
         <div className="flex-1 border-r border-gray-700 bg-gray-50 flex flex-col min-h-0 overflow-hidden">
           <div className="bg-white border-b border-gray-200 p-3 flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
@@ -744,8 +812,10 @@ export default function MetaTranslationEditorPage() {
             )}
           </div>
         </div>
+        )}
 
         {/* Right Panel - Editor */}
+        {activeTabs.has('editor') && (
         <div className="flex-1 bg-gray-50 flex flex-col min-h-0 overflow-hidden">
           <div className="bg-white border-b border-gray-200 p-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -1075,21 +1145,22 @@ export default function MetaTranslationEditorPage() {
                 );
               })()}
             </div>
-            
-            {/* 저장 버튼 - 에디터 패널 하단 */}
-            <div className="bg-white border-t border-gray-200 px-4 py-3 flex items-center justify-end flex-shrink-0 mt-6">
-              <button
-                onClick={handleSave}
-                className="px-6 py-2 bg-orange-500 text-white text-xs font-medium rounded-md hover:bg-orange-600"
-              >
-                저장
-              </button>
-            </div>
+          </div>
+          
+          {/* 저장 버튼 - 에디터 패널 하단 */}
+          <div className="bg-white border-t border-gray-200 px-4 py-3 flex items-center justify-end flex-shrink-0">
+            <button
+              onClick={handleSave}
+              className="px-6 py-2 bg-orange-500 text-white text-xs font-medium rounded-md hover:bg-orange-600"
+            >
+              저장
+            </button>
           </div>
         </div>
+        )}
 
-        {/* 4th Panel - Final Result (저장 버튼 클릭 시 표시) */}
-        {showFinalResult && (
+        {/* 4th Panel - Final Result */}
+        {activeTabs.has('final') && (
           <div className="flex-1 border-l border-gray-700 bg-gray-50 flex flex-col min-h-0 overflow-hidden">
             <div className="bg-white border-b border-gray-200 p-3 flex items-center justify-between">
               <div className="flex items-center gap-3">

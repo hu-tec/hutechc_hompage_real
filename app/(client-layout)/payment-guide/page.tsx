@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { usePrice } from '@/lib/priceContext';
 import { useLanguageConfig, type LanguageTier } from '@/lib/languageConfig';
@@ -15,6 +16,8 @@ export default function PaymentGuidePage() {
   const router = useRouter();
   const { prices } = usePrice();
   const { languages, tierMultipliers } = useLanguageConfig();
+  const [selectedLargeCategory, setSelectedLargeCategory] = React.useState<string | null>(null);
+  const [selectedMidCategory, setSelectedMidCategory] = React.useState<string | null>(null);
 
   const enabledLanguages = languages.filter((l) => l.enabled);
 
@@ -259,6 +262,117 @@ export default function PaymentGuidePage() {
             </table>
           </div>
         </div>
+
+        {/* 7. 카테고리별 추가 요금 */}
+        {prices.clientPrices && prices.clientPrices.category_large && Object.keys(prices.clientPrices.category_large).length > 0 && (
+          <div className="bg-white p-5 rounded-xl shadow-sm mb-6">
+            <h2 className="text-lg font-bold text-blue-600 mb-4 pb-2 border-b-2 border-blue-50">
+              7️⃣ 카테고리별 추가 요금 (₩/단어 또는 %)
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              AI번역 서비스의 카테고리별 추가 요금을 확인하세요. 대 → 중 → 소 카테고리를 선택하여 가격을 확인하세요.
+            </p>
+
+            {/* 트리 형식 3단 레이아웃 */}
+            <div className="flex gap-4 h-[500px] border border-gray-200 rounded-lg overflow-hidden">
+              {/* 왼쪽: 대 카테고리 */}
+              <div className="w-1/3 border-r border-gray-200 bg-gray-50 flex flex-col">
+                <div className="p-4 border-b border-gray-200 bg-white">
+                  <h3 className="font-semibold text-gray-900">대 카테고리</h3>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {Object.entries(prices.clientPrices.category_large).map(([key, category]) => (
+                    <div
+                      key={key}
+                      className={`p-4 border-b border-gray-200 cursor-pointer transition-colors ${
+                        selectedLargeCategory === key
+                          ? 'bg-blue-100 border-blue-300'
+                          : 'bg-white hover:bg-gray-50'
+                      }`}
+                      onClick={() => {
+                        setSelectedLargeCategory(key);
+                        setSelectedMidCategory(null);
+                      }}
+                    >
+                      <div className="font-medium text-gray-900 mb-2">
+                        {category.icon} {category.name}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        기본 가격: ₩{category.price.toLocaleString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 중간: 중 카테고리 */}
+              <div className="w-1/3 border-r border-gray-200 bg-gray-50 flex flex-col">
+                <div className="p-4 border-b border-gray-200 bg-white">
+                  <h3 className="font-semibold text-gray-900">중 카테고리</h3>
+                  {selectedLargeCategory && prices.clientPrices.category_large[selectedLargeCategory] && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {prices.clientPrices.category_large[selectedLargeCategory].icon} {prices.clientPrices.category_large[selectedLargeCategory].name} 선택됨
+                    </p>
+                  )}
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {!selectedLargeCategory ? (
+                    <div className="p-4 text-sm text-gray-500 text-center">대 카테고리를 선택하세요</div>
+                  ) : prices.clientPrices.category_mid?.[selectedLargeCategory] && Object.keys(prices.clientPrices.category_mid[selectedLargeCategory]).length > 0 ? (
+                    Object.entries(prices.clientPrices.category_mid[selectedLargeCategory]).map(([key, category]) => (
+                      <div
+                        key={key}
+                        className={`p-4 border-b border-gray-200 cursor-pointer transition-colors ${
+                          selectedMidCategory === key
+                            ? 'bg-blue-100 border-blue-300'
+                            : 'bg-white hover:bg-gray-50'
+                        }`}
+                        onClick={() => setSelectedMidCategory(key)}
+                      >
+                        <div className="font-medium text-gray-900 mb-2">{category.name}</div>
+                        <div className="text-sm text-gray-600">
+                          추가 가격: +₩{category.price.toLocaleString()}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-sm text-gray-500 text-center">중 카테고리가 없습니다</div>
+                  )}
+                </div>
+              </div>
+
+              {/* 오른쪽: 소 카테고리 */}
+              <div className="w-1/3 bg-gray-50 flex flex-col">
+                <div className="p-4 border-b border-gray-200 bg-white">
+                  <h3 className="font-semibold text-gray-900">소 카테고리</h3>
+                  {selectedMidCategory && prices.category_mid?.[selectedLargeCategory || '']?.[selectedMidCategory] && (
+                    <p className="text-xs text-gray-500 mt-1">중 카테고리 선택됨</p>
+                  )}
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {!selectedMidCategory ? (
+                    <div className="p-4 text-sm text-gray-500 text-center">중 카테고리를 선택하세요</div>
+                  ) : prices.clientPrices.category_small?.[selectedMidCategory] && Object.keys(prices.clientPrices.category_small[selectedMidCategory]).length > 0 ? (
+                    <div className="p-4 space-y-3">
+                      {Object.entries(prices.clientPrices.category_small[selectedMidCategory]).map(([smallName, smallPrice]) => (
+                        <div key={smallName} className="bg-white border border-gray-200 rounded-lg p-3">
+                          <div className="font-medium text-sm text-gray-900 mb-1">{smallName}</div>
+                          <div className="text-sm text-gray-600">
+                            가격: +₩{smallPrice.toLocaleString()}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-sm text-gray-500 text-center">
+                      소 카테고리가 없습니다.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 최종 금액 계산 공식 */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 rounded-xl mb-6">
