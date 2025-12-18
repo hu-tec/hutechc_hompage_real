@@ -66,7 +66,8 @@ export default function ExamGradingPage() {
 
   // Mock 평가 기준 데이터 (실제로는 exam.evaluationCriteria에서 가져와야 함)
   const evaluationCriteria: EvaluationCriteria[] = useMemo(() => {
-    return exam?.evaluationCriteria ?? [
+    // TODO: ExamDraft에 evaluationCriteria 속성 추가 후 exam.evaluationCriteria 사용
+    return [
       {
         id: 'ec-1',
         name: '정확성',
@@ -105,7 +106,7 @@ export default function ExamGradingPage() {
         ],
       },
     ];
-  }, [exam?.evaluationCriteria]);
+  }, []);
 
   // 자동채점 결과 통계 계산
   const autoGradingStats = useMemo(() => {
