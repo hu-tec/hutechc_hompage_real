@@ -41,7 +41,6 @@ const MOCK_CANDIDATES: CandidateInfo[] = [
 
 export default function ExamGradingPage() {
   const params = useParams<{ examId: string }>();
-  const router = useRouter();
   const examId = params.examId;
 
   const drafts = useMemo(() => getDrafts(), []);
@@ -131,6 +130,22 @@ export default function ExamGradingPage() {
     return { needsGrading, completedGrading };
   }, [questionScores, questions]);
 
+  // 현재 응시자의 최종 점수 계산 (early return 전에 호출)
+  const currentCandidate = MOCK_CANDIDATES[currentCandidateIndex];
+  const finalScore = useMemo(() => {
+    let totalScore = 0;
+    let totalPoints = 0;
+    questions.forEach((q) => {
+      const qKey = `${currentCandidate.name}-${q.id}`;
+      const qScore = questionScores[qKey];
+      totalPoints += q.points;
+      if (qScore?.isGraded) {
+        totalScore += qScore.score;
+      }
+    });
+    return { score: totalScore, total: totalPoints };
+  }, [questionScores, currentCandidate.name, questions]);
+
   // 다음 채점 필요 응시자로 이동
   const handleNextNeedsGrading = () => {
     const needsGradingCandidates = MOCK_CANDIDATES
@@ -160,26 +175,10 @@ export default function ExamGradingPage() {
   }
 
   const currentQuestion = questions[currentQuestionIndex];
-  const currentCandidate = MOCK_CANDIDATES[currentCandidateIndex];
   const key = `${currentCandidate.name}-${currentQuestion.id}`;
   const note = graderNotes[key] ?? '';
   const questionScore = questionScores[key] ?? { isGraded: false, score: 0 };
   const currentEvaluationScores = evaluationScores[key] ?? {};
-
-  // 현재 응시자의 최종 점수 계산
-  const finalScore = useMemo(() => {
-    let totalScore = 0;
-    let totalPoints = 0;
-    questions.forEach((q) => {
-      const qKey = `${currentCandidate.name}-${q.id}`;
-      const qScore = questionScores[qKey];
-      totalPoints += q.points;
-      if (qScore?.isGraded) {
-        totalScore += qScore.score;
-      }
-    });
-    return { score: totalScore, total: totalPoints };
-  }, [questionScores, currentCandidate.name, questions]);
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 text-sm w-full">
