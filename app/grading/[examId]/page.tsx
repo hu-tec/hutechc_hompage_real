@@ -402,14 +402,14 @@ export default function ExamGradingPage() {
           {/* 응시자 답안 vs 출제자 채점 입력 */}
           <section className="grid grid-cols-3 gap-4 text-xs">
             <div>
-              <h3 className="font-semibold text-gray-800 mb-2">응시자 답안 (mock)</h3>
-              <div className="border border-gray-200 rounded-md px-3 py-2 bg-gray-50 h-48 overflow-auto text-gray-800">
+              <h3 className="font-semibold text-gray-800 mb-2 text-sm">응시자 답안 (mock)</h3>
+              <div className="border border-gray-200 rounded-md px-3 py-2 bg-gray-50 min-h-[600px] overflow-auto text-gray-800 text-sm">
                 {currentCandidate.name} 님이 작성한 답안 예시입니다. 실제 서비스에서는 이 영역에 응시자가 제출한 번역문/프롬프트/에세이 내용이 표시됩니다.
               </div>
             </div>
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-gray-800 text-[11px]">
+                <h3 className="font-semibold text-gray-800 text-sm">
                   {showDetailedGrading[key] ? '평가 기준 채점' : '통합점수'}
                 </h3>
                 {!showDetailedGrading[key] ? (
@@ -421,7 +421,7 @@ export default function ExamGradingPage() {
                         [key]: true,
                       }));
                     }}
-                    className="px-2 py-0.5 text-[10px] rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
+                    className="px-3 py-1.5 text-sm rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
                   >
                     세부체점하기
                   </button>
@@ -435,7 +435,7 @@ export default function ExamGradingPage() {
                           [key]: false,
                         }));
                       }}
-                      className="px-2 py-0.5 text-[10px] rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      className="px-3 py-1.5 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
                     >
                       통합점수로
                     </button>
@@ -463,7 +463,7 @@ export default function ExamGradingPage() {
                         
                         alert(`평가 기준 채점 점수가 저장되었습니다. (총 ${totalScore.toFixed(1)}점)`);
                       }}
-                      className="px-2 py-0.5 text-[10px] rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                      className="px-3 py-1.5 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
                     >
                       저장
                     </button>
@@ -471,9 +471,9 @@ export default function ExamGradingPage() {
                 )}
               </div>
               {!showDetailedGrading[key] ? (
-                <div className="border border-gray-200 rounded-md p-4 h-48 flex flex-col items-center justify-center space-y-3">
+                <div className="border border-gray-200 rounded-md p-4 min-h-[600px] flex flex-col items-center justify-center space-y-3">
                   <div className="text-center">
-                    <label className="block text-[11px] text-gray-600 mb-2">통합점수 입력</label>
+                    <label className="block text-sm text-gray-600 mb-2">통합점수 입력</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -491,33 +491,33 @@ export default function ExamGradingPage() {
                             },
                           }));
                         }}
-                        className="w-20 px-3 py-2 text-sm border border-gray-300 rounded-md text-center"
+                        className="w-24 px-4 py-3 text-base border border-gray-300 rounded-md text-center"
                         placeholder="0"
                       />
-                      <span className="text-sm text-gray-500">/ {currentQuestion.points}점</span>
+                      <span className="text-base text-gray-500">/ {currentQuestion.points}점</span>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="border border-gray-200 rounded-md p-2 h-48 overflow-y-auto space-y-3">
+                <div className="border border-gray-200 rounded-md p-3 min-h-[600px] space-y-4">
                   {evaluationCriteria.map((criterion) => {
                     return (
-                      <div key={criterion.id} className="border-b border-gray-100 pb-2 last:border-b-0">
-                        <div className="font-semibold text-[10px] text-gray-800 mb-1">
+                      <div key={criterion.id} className="border-b border-gray-200 pb-3 last:border-b-0">
+                        <div className="font-semibold text-sm text-gray-800 mb-2">
                           {criterion.name} ({criterion.ratio}%)
                         </div>
-                        <div className="space-y-1.5 pl-2">
+                        <div className="space-y-3 pl-2">
                           {criterion.subCriteria.map((sub) => {
                             const subMaxScore = (sub.ratio / 100) * currentQuestion.points;
                             const subKey = `${key}-${criterion.id}-${sub.id}`;
                             const subScore = currentEvaluationScores[subKey] ?? 0;
                             return (
-                              <div key={sub.id} className="text-[9px]">
-                                <div className="flex items-center justify-between mb-0.5">
-                                  <span className="text-gray-700">
+                              <div key={sub.id} className="text-xs">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-gray-700 font-medium">
                                     {sub.definition} ({sub.ratio}%)
                                   </span>
-                                  <div className="flex items-center gap-1">
+                                  <div className="flex items-center gap-2">
                                     <input
                                       type="number"
                                       min="0"
@@ -534,12 +534,12 @@ export default function ExamGradingPage() {
                                           },
                                         }));
                                       }}
-                                      className="w-12 px-1 py-0.5 text-[9px] border border-gray-300 rounded"
+                                      className="w-16 px-2 py-1 text-xs border border-gray-300 rounded"
                                     />
-                                    <span className="text-[9px] text-gray-500">/ {subMaxScore.toFixed(1)}</span>
+                                    <span className="text-xs text-gray-500">/ {subMaxScore.toFixed(1)}</span>
                                   </div>
                                 </div>
-                                <div className="text-gray-500 text-[8px] pl-1">
+                                <div className="text-gray-500 text-xs pl-1">
                                   요인: {sub.factor}
                                 </div>
                               </div>
@@ -553,10 +553,10 @@ export default function ExamGradingPage() {
               )}
             </div>
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-gray-800 text-[11px]">출제자 채점 메모</h3>
-                <div className="flex items-center gap-2">
-                  <label className="text-[10px] text-gray-600">채점 점수:</label>
+              <div className="flex items-center justify-between mb-2 flex-nowrap gap-3">
+                <h3 className="font-semibold text-gray-800 text-sm whitespace-nowrap">출제자 채점 메모</h3>
+                <div className="flex items-center gap-2 flex-nowrap flex-shrink-0">
+                  <label className="text-xs text-gray-600 whitespace-nowrap">채점 점수:</label>
                   <input
                     type="number"
                     min="0"
@@ -572,10 +572,10 @@ export default function ExamGradingPage() {
                         },
                       }));
                     }}
-                    className="w-14 px-1.5 py-0.5 text-[10px] border border-gray-300 rounded-md"
+                    className="w-16 px-2 py-1 text-xs border border-gray-300 rounded-md flex-shrink-0"
                     placeholder="0"
                   />
-                  <span className="text-[10px] text-gray-500">/ {currentQuestion.points}점</span>
+                  <span className="text-xs text-gray-500 whitespace-nowrap">/ {currentQuestion.points}점</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -588,18 +588,18 @@ export default function ExamGradingPage() {
                       }));
                       alert('채점이 완료되었습니다.');
                     }}
-                    className={`px-2 py-0.5 text-[10px] rounded-md ${
+                    className={`px-3 py-1 text-xs rounded-md whitespace-nowrap flex-shrink-0 ${
                       questionScore.isGraded
                         ? 'bg-green-100 text-green-700 border border-green-300'
                         : 'bg-indigo-600 text-white hover:bg-indigo-700'
                     }`}
                   >
-                    {questionScore.isGraded ? '채점완료' : '채점완료'}
+                    채점완료
                   </button>
                 </div>
               </div>
               <textarea
-                className="w-full h-32 border border-gray-300 rounded-md px-2 py-1.5 text-[10px] resize-none"
+                className="w-full min-h-[600px] border border-gray-300 rounded-md px-3 py-2 text-sm resize-none"
                 placeholder="모범답안과 비교하여 평가 의견, 감점/가점 사유 등을 작성하세요."
                 value={note}
                 onChange={(e) =>
