@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 type TranslatorLevel = 'new' | 'C' | 'B' | 'A' | 'native';
 
@@ -61,7 +62,7 @@ export default function TranslatorProfilePage() {
     setProfile(tempProfile);
     setIsEditing(false);
     // 실제로는 서버 저장 필요
-    alert('프로필이 저장되었습니다. 관리자 승인을 기다려주세요.');
+    alert('프로필이 저장되었습니다. 등급을 신청하려면 "등급 신청하기" 버튼을 클릭하세요.');
   };
 
   const handleCancel = () => {
@@ -170,16 +171,24 @@ export default function TranslatorProfilePage() {
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-gray-900">등급 신청</h2>
-          {profile.approvalStatus === 'pending' && (
-            <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-sm font-semibold rounded-full">
-              승인 대기 중
-            </span>
-          )}
-          {profile.approvalStatus === 'approved' && (
-            <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-semibold rounded-full">
-              승인됨
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            {profile.approvalStatus === 'pending' && (
+              <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-sm font-semibold rounded-full">
+                승인 대기 중
+              </span>
+            )}
+            {profile.approvalStatus === 'approved' && (
+              <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-semibold rounded-full">
+                승인됨
+              </span>
+            )}
+            <Link
+              href="/translate/translator/profile/grade-application"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700"
+            >
+              등급 신청하기
+            </Link>
+          </div>
         </div>
 
         <p className="text-sm text-gray-600 mb-6">희망하는 등급을 선택하세요. 선택 후 증명서를 제출하면 관리자가 검토합니다.</p>
