@@ -4,6 +4,26 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Maximize2, MoreVertical, Save, FileText, RefreshCw, X } from 'lucide-react';
 
+interface EditorSection {
+  id: string;
+  title: string;
+  description: string;
+  placeholder: string;
+  order: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface EditorConfig {
+  id: string;
+  name: string;
+  aiModels: string[];
+  isActive: boolean;
+  sections: EditorSection[];
+}
+
 interface MetaTranslationData {
   mainCategory: string;
   middleCategory: string;
@@ -51,6 +71,8 @@ export default function MetaTranslationEditorPage() {
   const [data, setData] = useState<MetaTranslationData | null>(null);
   const [selectedTranslator, setSelectedTranslator] = useState<string>('chatgpt');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('en');
+  const [editorConfig, setEditorConfig] = useState<EditorConfig | null>(null);
+  const [isPreview, setIsPreview] = useState(false);
 
   // 선택된 탭들 (원문, AI 답변, 에디터, 최종 수정본) - 여러 개 동시 선택 가능
   const [activeTabs, setActiveTabs] = useState<Set<string>>(new Set(['original', 'ai', 'editor', 'final']));
@@ -136,28 +158,119 @@ export default function MetaTranslationEditorPage() {
     section4: true,
   });
 
+  // 에디터 구성 불러오기 함수
+  const loadEditorConfig = () => {
+    if (typeof window === 'undefined') return;
+    
+    const storedConfig = window.localStorage.getItem('editorConfig');
+    if (storedConfig) {
+      try {
+        const parsed = JSON.parse(storedConfig) as EditorConfig;
+        setEditorConfig(parsed);
+      } catch (e) {
+        console.error('Failed to parse editorConfig', e);
+      }
+    }
+  };
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const stored = window.sessionStorage.getItem('metaTranslationRequest');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as MetaTranslationData;
-        setData(parsed);
-        
-        // 섹션별 내용 로드
-        if (parsed.sections) {
-          setOriginalContent(parsed.sections.section2Content || parsed.sections.section3Content || '');
-          setAiContent(parsed.sections.section2Content || parsed.sections.section3Content || '');
-          setEditorContent(parsed.sections.section2Content || parsed.sections.section3Content || '');
+    // URL에서 preview 파라미터 확인
+    const previewMode = window.location.search.includes('preview=true');
+    setIsPreview(previewMode);
+
+    // 에디터 구성 불러오기
+    loadEditorConfig();
+
+    // 미리보기 모드가 아닐 때만 실제 데이터 불러오기
+    if (!previewMode) {
+      const stored = window.sessionStorage.getItem('metaTranslationRequest');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored) as MetaTranslationData;
+          setData(parsed);
+          
+          // 섹션별 내용 로드
+          if (parsed.sections) {
+            setOriginalContent(parsed.sections.section2Content || parsed.sections.section3Content || '');
+            setAiContent(parsed.sections.section2Content || parsed.sections.section3Content || '');
+            setEditorContent(parsed.sections.section2Content || parsed.sections.section3Content || '');
+          }
+        } catch (e) {
+          console.error('Failed to parse metaTranslationRequest', e);
         }
-      } catch (e) {
-        console.error('Failed to parse metaTranslationRequest', e);
       }
+    } else {
+      // 미리보기 모드: 더미 데이터 생성
+      setData({
+        mainCategory: '',
+        middleCategory: '',
+        detailCategory: '',
+        language: {
+          sourceMode: 'detect',
+          sourceLang: null,
+          targetLanguages: [],
+          primaryTarget: null,
+        },
+        ai: {
+          models: [],
+          tone: '',
+          customPrompt: '',
+        },
+        editor: 'use',
+        humanWork: {
+          type: '',
+          level: '',
+          urgent: false,
+        },
+        files: [],
+        sections: {
+          section1Content: '원문 내용이 여기에 표시됩니다.',
+          section2Content: 'This is the area where the example answer is displayed.',
+          section3Content: 'This is the area where the example answer is displayed.',
+        },
+      });
+      setOriginalContent('원문 내용이 여기에 표시됩니다.');
+      setAiContent('This is the area where the example answer is displayed.');
+      setEditorContent('This is the area where the example answer is displayed.');
     }
+
+    // localStorage 변경 감지 (다른 탭에서 변경된 경우)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'editorConfig') {
+        loadEditorConfig();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    // 커스텀 이벤트 감지 (같은 탭에서 변경된 경우)
+    const handleCustomStorageChange = () => {
+      loadEditorConfig();
+    };
+    window.addEventListener('storage', handleCustomStorageChange);
+
+    // 페이지 포커스 시 구성을 다시 불러오기
+    const handleFocus = () => {
+      loadEditorConfig();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // 주기적으로 구성을 확인 (5초마다)
+    const intervalId = setInterval(() => {
+      loadEditorConfig();
+    }, 5000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('storage', handleCustomStorageChange);
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(intervalId);
+    };
   }, []);
 
-  if (!data) {
+  // 미리보기 모드이거나 데이터가 있을 때만 렌더링
+  if (!data && !isPreview) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <p className="text-sm text-gray-600">데이터를 불러올 수 없습니다. 처음부터 다시 진행해주세요.</p>
@@ -839,312 +952,143 @@ export default function MetaTranslationEditorPage() {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
-            {/* 모든 섹션 표시 - 선택된 문장들을 각 섹션에 통합 */}
-            <div className="space-y-6">
-              {(() => {
-                const sectionId = 'section1';
-                const sectionSentences = Array.from(selectedSentences.entries()).filter(
-                  ([_, sentence]) => sentence.section === sectionId
-                );
-                const baseContent = data.sections?.section1Content || '원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. ';
-                
-                return (
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2 text-xs">1. 원문</h4>
-                    <p className="text-gray-600 mb-3 text-xs">
-                      AI 번역기 내용이 기본적으로 보여진 후, 수정된 내용만 색상으로 표시되는 형식입니다.
-                    </p>
-                    <div className="border border-gray-300 rounded-md p-3 bg-white min-h-[200px]">
-                      {sectionSentences.length > 0 ? (
-                        <div className="space-y-3">
-                          {sectionSentences.map(([key, sentence]) => {
-                            const editedText = editedSentences.get(key) || sentence.originalText;
-                            const isEdited = editedText !== sentence.originalText;
-                            return (
-                              <div key={key} className="space-y-2">
-                                <textarea
-                                  value={editedText}
-                                  onChange={(e) => {
-                                    setEditedSentences((prev) => {
-                                      const newMap = new Map(prev);
-                                      newMap.set(key, e.target.value);
-                                      return newMap;
-                                    });
-                                  }}
-                                  className={`w-full border rounded-md p-2 text-xs min-h-[60px] resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                    isEdited ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
-                                  }`}
-                                  placeholder="문장을 수정하세요..."
-                                />
-                                {isEdited && (
-                                  <div className="p-2 bg-gray-50 rounded text-xs">
-                                    <span className="text-gray-500">수정된 부분: </span>
-                                    <span className="whitespace-pre-wrap leading-relaxed text-gray-700">
-                                      {highlightChanges(sentence.originalText, editedText)}
-                                    </span>
+            {/* 저장된 구성을 기반으로 섹션 동적 렌더링 */}
+            {editorConfig && editorConfig.sections.length > 0 ? (
+              <div className="space-y-6">
+                {editorConfig.sections
+                  .sort((a, b) => a.order - b.order)
+                  .map((section) => {
+                    // 섹션 ID 매핑 (title에서 추출하거나 기본값 사용)
+                    const sectionIdMap: Record<string, string> = {
+                      '1. 원문': 'section1',
+                      '2. 목적': 'section2',
+                      '3. 내용': 'section3',
+                      '4. 추가 요청사항': 'section4',
+                    };
+                    const sectionId = sectionIdMap[section.title] || `section${section.order}`;
+                    const sectionSentences = Array.from(selectedSentences.entries()).filter(
+                      ([_, sentence]) => sentence.section === sectionId
+                    );
+                    
+                    // 기본 내용 가져오기
+                    let baseContent = '';
+                    if (sectionId === 'section1') {
+                      baseContent = data.sections?.section1Content || section.placeholder;
+                    } else if (sectionId === 'section2') {
+                      baseContent = editorContent || data.sections?.section2Content || section.placeholder;
+                    } else if (sectionId === 'section3') {
+                      baseContent = data.sections?.section3Content || section.placeholder;
+                    } else if (sectionId === 'section4') {
+                      baseContent = data.sections?.section4Content || section.placeholder;
+                    } else {
+                      baseContent = section.placeholder;
+                    }
+                    
+                    return (
+                      <div key={section.id}>
+                        <h4 className="font-semibold text-gray-900 mb-2 text-xs">{section.title}</h4>
+                        <p className="text-gray-600 mb-3 text-xs">{section.description}</p>
+                        <div className="border border-gray-300 rounded-md p-3 bg-white min-h-[200px]">
+                          {sectionSentences.length > 0 ? (
+                            <div className="space-y-3">
+                              {sectionSentences.map(([key, sentence]) => {
+                                const editedText = editedSentences.get(key) || sentence.originalText;
+                                const isEdited = editedText !== sentence.originalText;
+                                return (
+                                  <div key={key} className="space-y-2">
+                                    <textarea
+                                      value={editedText}
+                                      onChange={(e) => {
+                                        setEditedSentences((prev) => {
+                                          const newMap = new Map(prev);
+                                          newMap.set(key, e.target.value);
+                                          return newMap;
+                                        });
+                                      }}
+                                      className={`w-full border rounded-md p-2 text-xs min-h-[60px] resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                        isEdited ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
+                                      }`}
+                                      placeholder={section.placeholder}
+                                    />
+                                    {isEdited && (
+                                      <div className="p-2 bg-gray-50 rounded text-xs">
+                                        <span className="text-gray-500">수정된 부분: </span>
+                                        <span className="whitespace-pre-wrap leading-relaxed text-gray-700">
+                                          {highlightChanges(sentence.originalText, editedText)}
+                                        </span>
+                                      </div>
+                                    )}
+                                    <div className="text-xs text-gray-500">
+                                      <button
+                                        onClick={() => {
+                                          setSelectedSentences((prev) => {
+                                            const newMap = new Map(prev);
+                                            newMap.delete(key);
+                                            return newMap;
+                                          });
+                                          setEditedSentences((prev) => {
+                                            const newMap = new Map(prev);
+                                            newMap.delete(key);
+                                            return newMap;
+                                          });
+                                        }}
+                                        className="text-red-500 hover:text-red-700"
+                                      >
+                                        제거
+                                      </button>
+                                    </div>
                                   </div>
-                                )}
-                                <div className="text-xs text-gray-500">
-                                  <button
-                                    onClick={() => {
-                                      setSelectedSentences((prev) => {
-                                        const newMap = new Map(prev);
-                                        newMap.delete(key);
-                                        return newMap;
-                                      });
-                                      setEditedSentences((prev) => {
-                                        const newMap = new Map(prev);
-                                        newMap.delete(key);
-                                        return newMap;
-                                      });
-                                    }}
-                                    className="text-red-500 hover:text-red-700"
-                                  >
-                                    제거
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="whitespace-pre-wrap leading-relaxed text-xs text-gray-700">
+                              {baseContent}
+                            </div>
+                          )}
                         </div>
-                      ) : (
-                        <div className="whitespace-pre-wrap leading-relaxed text-xs text-gray-700">
-                          {baseContent}
-                        </div>
-                      )}
+                      </div>
+                    );
+                  })}
+              </div>
+            ) : (
+              // 기본 섹션 (구성이 없을 때)
+              <div className="space-y-6">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2 text-xs">1. 원문</h4>
+                  <p className="text-gray-600 mb-3 text-xs">
+                    AI 번역기 내용이 기본적으로 보여진 후, 수정된 내용만 색상으로 표시되는 형식입니다.
+                  </p>
+                  <div className="border border-gray-300 rounded-md p-3 bg-white min-h-[200px]">
+                    <div className="whitespace-pre-wrap leading-relaxed text-xs text-gray-700">
+                      {data.sections?.section1Content || '원문 내용이 여기에 표시됩니다.'}
                     </div>
                   </div>
-                );
-              })()}
-              
-              {(() => {
-                const sectionId = 'section2';
-                const sectionSentences = Array.from(selectedSentences.entries()).filter(
-                  ([_, sentence]) => sentence.section === sectionId
-                );
-                const baseContent = editorContent || data.sections?.section2Content || 'This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. ';
-                
-                return (
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2 text-xs">2. 목적</h4>
-                    <p className="text-gray-600 mb-3 text-xs">
-                      AI 번역기 내용이 기본적으로 보여진 후, 수정된 내용만 색상으로 표시되는 형식입니다.
-                    </p>
-                    <div className="border border-gray-300 rounded-md p-3 bg-white min-h-[200px]">
-                      {sectionSentences.length > 0 ? (
-                        <div className="space-y-3">
-                          {sectionSentences.map(([key, sentence]) => {
-                            const editedText = editedSentences.get(key) || sentence.originalText;
-                            const isEdited = editedText !== sentence.originalText;
-                            return (
-                              <div key={key} className="space-y-2">
-                                <textarea
-                                  value={editedText}
-                                  onChange={(e) => {
-                                    setEditedSentences((prev) => {
-                                      const newMap = new Map(prev);
-                                      newMap.set(key, e.target.value);
-                                      return newMap;
-                                    });
-                                  }}
-                                  className={`w-full border rounded-md p-2 text-xs min-h-[60px] resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                    isEdited ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
-                                  }`}
-                                  placeholder="문장을 수정하세요..."
-                                />
-                                {isEdited && (
-                                  <div className="p-2 bg-gray-50 rounded text-xs">
-                                    <span className="text-gray-500">수정된 부분: </span>
-                                    <span className="whitespace-pre-wrap leading-relaxed text-gray-700">
-                                      {highlightChanges(sentence.originalText, editedText)}
-                                    </span>
-                                  </div>
-                                )}
-                                <div className="text-xs text-gray-500">
-                                  <button
-                                    onClick={() => {
-                                      setSelectedSentences((prev) => {
-                                        const newMap = new Map(prev);
-                                        newMap.delete(key);
-                                        return newMap;
-                                      });
-                                      setEditedSentences((prev) => {
-                                        const newMap = new Map(prev);
-                                        newMap.delete(key);
-                                        return newMap;
-                                      });
-                                    }}
-                                    className="text-red-500 hover:text-red-700"
-                                  >
-                                    제거
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="whitespace-pre-wrap leading-relaxed text-xs text-gray-700">
-                          {baseContent}
-                        </div>
-                      )}
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2 text-xs">2. 목적</h4>
+                  <p className="text-gray-600 mb-3 text-xs">
+                    AI 번역기 내용이 기본적으로 보여진 후, 수정된 내용만 색상으로 표시되는 형식입니다.
+                  </p>
+                  <div className="border border-gray-300 rounded-md p-3 bg-white min-h-[200px]">
+                    <div className="whitespace-pre-wrap leading-relaxed text-xs text-gray-700">
+                      {editorContent || data.sections?.section2Content || 'This is the area where the example answer is displayed.'}
                     </div>
                   </div>
-                );
-              })()}
-              
-              {(() => {
-                const sectionId = 'section3';
-                const sectionSentences = Array.from(selectedSentences.entries()).filter(
-                  ([_, sentence]) => sentence.section === sectionId
-                );
-                const baseContent = data.sections?.section3Content || 'This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. ';
-                
-                return (
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2 text-xs">3. 내용</h4>
-                    <p className="text-gray-600 mb-3 text-xs">
-                      AI 번역기 내용이 기본적으로 보여진 후, 수정된 내용만 색상으로 표시되는 형식입니다.
-                    </p>
-                    <div className="border border-gray-300 rounded-md p-3 bg-white min-h-[200px]">
-                      {sectionSentences.length > 0 ? (
-                        <div className="space-y-3">
-                          {sectionSentences.map(([key, sentence]) => {
-                            const editedText = editedSentences.get(key) || sentence.originalText;
-                            const isEdited = editedText !== sentence.originalText;
-                            return (
-                              <div key={key} className="space-y-2">
-                                <textarea
-                                  value={editedText}
-                                  onChange={(e) => {
-                                    setEditedSentences((prev) => {
-                                      const newMap = new Map(prev);
-                                      newMap.set(key, e.target.value);
-                                      return newMap;
-                                    });
-                                  }}
-                                  className={`w-full border rounded-md p-2 text-xs min-h-[60px] resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                    isEdited ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
-                                  }`}
-                                  placeholder="문장을 수정하세요..."
-                                />
-                                {isEdited && (
-                                  <div className="p-2 bg-gray-50 rounded text-xs">
-                                    <span className="text-gray-500">수정된 부분: </span>
-                                    <span className="whitespace-pre-wrap leading-relaxed text-gray-700">
-                                      {highlightChanges(sentence.originalText, editedText)}
-                                    </span>
-                                  </div>
-                                )}
-                                <div className="text-xs text-gray-500">
-                                  <button
-                                    onClick={() => {
-                                      setSelectedSentences((prev) => {
-                                        const newMap = new Map(prev);
-                                        newMap.delete(key);
-                                        return newMap;
-                                      });
-                                      setEditedSentences((prev) => {
-                                        const newMap = new Map(prev);
-                                        newMap.delete(key);
-                                        return newMap;
-                                      });
-                                    }}
-                                    className="text-red-500 hover:text-red-700"
-                                  >
-                                    제거
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="whitespace-pre-wrap leading-relaxed text-xs text-gray-700">
-                          {baseContent}
-                        </div>
-                      )}
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2 text-xs">3. 내용</h4>
+                  <p className="text-gray-600 mb-3 text-xs">
+                    AI 번역기 내용이 기본적으로 보여진 후, 수정된 내용만 색상으로 표시되는 형식입니다.
+                  </p>
+                  <div className="border border-gray-300 rounded-md p-3 bg-white min-h-[200px]">
+                    <div className="whitespace-pre-wrap leading-relaxed text-xs text-gray-700">
+                      {data.sections?.section3Content || 'This is the area where the example answer is displayed.'}
                     </div>
                   </div>
-                );
-              })()}
-              
-              {(() => {
-                const sectionId = 'section4';
-                const sectionSentences = Array.from(selectedSentences.entries()).filter(
-                  ([_, sentence]) => sentence.section === sectionId
-                );
-                const baseContent = data.sections?.section4Content || 'This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed.';
-                
-                return (
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2 text-xs">4. 추가 요청사항</h4>
-                    <p className="text-gray-600 mb-3 text-xs">
-                      AI 번역기 내용이 기본적으로 보여진 후, 수정된 내용만 색상으로 표시되는 형식입니다.
-                    </p>
-                    <div className="border border-gray-300 rounded-md p-3 bg-white min-h-[200px]">
-                      {sectionSentences.length > 0 ? (
-                        <div className="space-y-3">
-                          {sectionSentences.map(([key, sentence]) => {
-                            const editedText = editedSentences.get(key) || sentence.originalText;
-                            const isEdited = editedText !== sentence.originalText;
-                            return (
-                              <div key={key} className="space-y-2">
-                                <textarea
-                                  value={editedText}
-                                  onChange={(e) => {
-                                    setEditedSentences((prev) => {
-                                      const newMap = new Map(prev);
-                                      newMap.set(key, e.target.value);
-                                      return newMap;
-                                    });
-                                  }}
-                                  className={`w-full border rounded-md p-2 text-xs min-h-[60px] resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                    isEdited ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
-                                  }`}
-                                  placeholder="문장을 수정하세요..."
-                                />
-                                {isEdited && (
-                                  <div className="p-2 bg-gray-50 rounded text-xs">
-                                    <span className="text-gray-500">수정된 부분: </span>
-                                    <span className="whitespace-pre-wrap leading-relaxed text-gray-700">
-                                      {highlightChanges(sentence.originalText, editedText)}
-                                    </span>
-                                  </div>
-                                )}
-                                <div className="text-xs text-gray-500">
-                                  <button
-                                    onClick={() => {
-                                      setSelectedSentences((prev) => {
-                                        const newMap = new Map(prev);
-                                        newMap.delete(key);
-                                        return newMap;
-                                      });
-                                      setEditedSentences((prev) => {
-                                        const newMap = new Map(prev);
-                                        newMap.delete(key);
-                                        return newMap;
-                                      });
-                                    }}
-                                    className="text-red-500 hover:text-red-700"
-                                  >
-                                    제거
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="whitespace-pre-wrap leading-relaxed text-xs text-gray-700">
-                          {baseContent}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
+                </div>
+              </div>
+            )}
           </div>
           
           {/* 저장 버튼 - 에디터 패널 하단 */}

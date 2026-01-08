@@ -340,8 +340,59 @@ export default function AdminEditorUIPage() {
   };
 
   const handleSave = () => {
-    // 실제로는 서버에 저장
-    alert('설정이 저장되었습니다.');
+    // localStorage에 저장 (현재 선택된 에디터 저장)
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('editorConfig', JSON.stringify(selectedEditor));
+        alert('설정이 저장되었습니다.');
+      }
+    } catch (e) {
+      console.error('Failed to save editor config', e);
+      alert('설정 저장에 실패했습니다.');
+    }
+  };
+
+  const handleApply = () => {
+    // 현재 선택된 에디터를 활성화하고 저장
+    try {
+      if (typeof window !== 'undefined') {
+        // 현재 선택된 에디터를 활성화
+        const updatedEditors = editors.map((e) => ({
+          ...e,
+          isActive: e.id === selectedEditorId,
+        }));
+        setEditors(updatedEditors);
+        
+        // 활성화된 에디터 저장
+        const activeEditor = { ...selectedEditor, isActive: true };
+        window.localStorage.setItem('editorConfig', JSON.stringify(activeEditor));
+        
+        // localStorage 변경 이벤트 발생시키기 (같은 탭에서 감지하기 위해)
+        window.dispatchEvent(new Event('storage'));
+        
+        // 실제 에디터 페이지가 열려있으면 새로고침하도록 알림
+        const shouldOpenEditor = confirm('설정이 적용되었습니다.\n실제 에디터 화면을 확인하시겠습니까?');
+        if (shouldOpenEditor) {
+          window.open('/translate/meta/new/editor?preview=true', '_blank');
+        }
+      }
+    } catch (e) {
+      console.error('Failed to apply editor config', e);
+      alert('설정 적용에 실패했습니다.');
+    }
+  };
+
+  const handlePreview = () => {
+    // 새 창에서 실제 에디터 화면 열기 (현재 선택된 에디터 사용)
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('editorConfig', JSON.stringify(selectedEditor));
+        window.open('/translate/meta/new/editor?preview=true', '_blank');
+      }
+    } catch (e) {
+      console.error('Failed to open preview', e);
+      alert('미리보기를 열 수 없습니다.');
+    }
   };
 
   return (
@@ -700,13 +751,25 @@ export default function AdminEditorUIPage() {
               </div>
             </div>
 
-            {/* 저장 버튼 */}
-            <div className="border-t border-gray-200 p-4 flex justify-end">
+            {/* 저장 및 적용 버튼 */}
+            <div className="border-t border-gray-200 p-4 flex justify-end gap-2">
               <button
                 onClick={handleSave}
-                className="px-6 py-2 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors"
+                className="px-6 py-2 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-colors"
               >
                 저장
+              </button>
+              <button
+                onClick={handleApply}
+                className="px-6 py-2 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors"
+              >
+                적용하기
+              </button>
+              <button
+                onClick={handlePreview}
+                className="px-6 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+              >
+                실제 화면 보기
               </button>
             </div>
           </div>
