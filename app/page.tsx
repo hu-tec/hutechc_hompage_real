@@ -99,6 +99,15 @@ export default async function HomePage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-2">결제 시스템 안내</h2>
             <p className="text-gray-600">번역 서비스 요금 산정 방식 안내</p>
           </Link>
+
+          <Link
+            href="/expert/apply"
+            className="block p-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 text-white"
+          >
+            <div className="text-5xl mb-4">⭐</div>
+            <h2 className="text-2xl font-bold mb-2">전문가 신청</h2>
+            <p className="text-purple-100">번역 전문가로 등록하고 프로젝트에 참여하세요</p>
+          </Link>
         </div>
       </div>
     </div>
