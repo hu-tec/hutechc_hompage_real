@@ -479,7 +479,7 @@ export default function MetaTranslationEditorPage() {
     } = {};
 
     ['section1', 'section2', 'section3', 'section4'].forEach((sectionId) => {
-      const baseContent = data.sections?.[sectionId as keyof typeof data.sections] as string || '';
+      const baseContent = data?.sections?.[sectionId as keyof typeof data.sections] as string || '';
       const sectionSentences = Array.from(selectedSentences.entries()).filter(
         ([_, sentence]) => sentence.section === sectionId
       );
