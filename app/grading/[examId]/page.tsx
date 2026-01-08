@@ -52,6 +52,7 @@ export default function ExamGradingPage() {
   const [questionScores, setQuestionScores] = useState<Record<string, { isGraded: boolean; score: number }>>({});
   const [evaluationScores, setEvaluationScores] = useState<Record<string, Record<string, number>>>({});
   const [showCandidateListModal, setShowCandidateListModal] = useState(false);
+  const [showDetailedGrading, setShowDetailedGrading] = useState<Record<string, boolean>>({});
 
   const questions: GradingQuestion[] = useMemo(() => {
     const count = exam?.questionCount ?? 3;
@@ -408,87 +409,148 @@ export default function ExamGradingPage() {
             </div>
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-gray-800 text-[11px]">평가 기준 채점</h3>
-                <button
-                  type="button"
-                  onClick={() => {
-                    // 평가 기준 채점 점수 합계 계산
-                    let totalScore = 0;
-                    evaluationCriteria.forEach((criterion) => {
-                      criterion.subCriteria.forEach((sub) => {
-                        const subKey = `${key}-${criterion.id}-${sub.id}`;
-                        const subScore = currentEvaluationScores[subKey] ?? 0;
-                        totalScore += subScore;
-                      });
-                    });
-                    
-                    // 계산된 점수를 채점 점수 필드에 자동 입력
-                    setQuestionScores((prev) => ({
-                      ...prev,
-                      [key]: {
-                        isGraded: totalScore > 0,
-                        score: totalScore,
-                      },
-                    }));
-                    
-                    alert(`평가 기준 채점 점수가 저장되었습니다. (총 ${totalScore.toFixed(1)}점)`);
-                  }}
-                  className="px-2 py-0.5 text-[10px] rounded-md bg-blue-600 text-white hover:bg-blue-700"
-                >
-                  저장
-                </button>
+                <h3 className="font-semibold text-gray-800 text-[11px]">
+                  {showDetailedGrading[key] ? '평가 기준 채점' : '통합점수'}
+                </h3>
+                {!showDetailedGrading[key] ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowDetailedGrading((prev) => ({
+                        ...prev,
+                        [key]: true,
+                      }));
+                    }}
+                    className="px-2 py-0.5 text-[10px] rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
+                  >
+                    세부체점하기
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowDetailedGrading((prev) => ({
+                          ...prev,
+                          [key]: false,
+                        }));
+                      }}
+                      className="px-2 py-0.5 text-[10px] rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    >
+                      통합점수로
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // 평가 기준 채점 점수 합계 계산
+                        let totalScore = 0;
+                        evaluationCriteria.forEach((criterion) => {
+                          criterion.subCriteria.forEach((sub) => {
+                            const subKey = `${key}-${criterion.id}-${sub.id}`;
+                            const subScore = currentEvaluationScores[subKey] ?? 0;
+                            totalScore += subScore;
+                          });
+                        });
+                        
+                        // 계산된 점수를 채점 점수 필드에 자동 입력
+                        setQuestionScores((prev) => ({
+                          ...prev,
+                          [key]: {
+                            isGraded: totalScore > 0,
+                            score: totalScore,
+                          },
+                        }));
+                        
+                        alert(`평가 기준 채점 점수가 저장되었습니다. (총 ${totalScore.toFixed(1)}점)`);
+                      }}
+                      className="px-2 py-0.5 text-[10px] rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                      저장
+                    </button>
+                  </div>
+                )}
               </div>
-              <div className="border border-gray-200 rounded-md p-2 h-48 overflow-y-auto space-y-3">
-                {evaluationCriteria.map((criterion) => {
-                  return (
-                    <div key={criterion.id} className="border-b border-gray-100 pb-2 last:border-b-0">
-                      <div className="font-semibold text-[10px] text-gray-800 mb-1">
-                        {criterion.name} ({criterion.ratio}%)
-                      </div>
-                      <div className="space-y-1.5 pl-2">
-                        {criterion.subCriteria.map((sub) => {
-                          const subMaxScore = (sub.ratio / 100) * currentQuestion.points;
-                          const subKey = `${key}-${criterion.id}-${sub.id}`;
-                          const subScore = currentEvaluationScores[subKey] ?? 0;
-                          return (
-                            <div key={sub.id} className="text-[9px]">
-                              <div className="flex items-center justify-between mb-0.5">
-                                <span className="text-gray-700">
-                                  {sub.definition} ({sub.ratio}%)
-                                </span>
-                                <div className="flex items-center gap-1">
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    max={subMaxScore}
-                                    step="0.5"
-                                    value={subScore}
-                                    onChange={(e) => {
-                                      const newScore = Math.max(0, Math.min(subMaxScore, Number(e.target.value) || 0));
-                                      setEvaluationScores((prev) => ({
-                                        ...prev,
-                                        [key]: {
-                                          ...(prev[key] || {}),
-                                          [subKey]: newScore,
-                                        },
-                                      }));
-                                    }}
-                                    className="w-12 px-1 py-0.5 text-[9px] border border-gray-300 rounded"
-                                  />
-                                  <span className="text-[9px] text-gray-500">/ {subMaxScore.toFixed(1)}</span>
+              {!showDetailedGrading[key] ? (
+                <div className="border border-gray-200 rounded-md p-4 h-48 flex flex-col items-center justify-center space-y-3">
+                  <div className="text-center">
+                    <label className="block text-[11px] text-gray-600 mb-2">통합점수 입력</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max={currentQuestion.points}
+                        step="0.5"
+                        value={questionScore.score}
+                        onChange={(e) => {
+                          const newScore = Math.max(0, Math.min(currentQuestion.points, Number(e.target.value) || 0));
+                          setQuestionScores((prev) => ({
+                            ...prev,
+                            [key]: {
+                              isGraded: newScore > 0 || questionScore.isGraded,
+                              score: newScore,
+                            },
+                          }));
+                        }}
+                        className="w-20 px-3 py-2 text-sm border border-gray-300 rounded-md text-center"
+                        placeholder="0"
+                      />
+                      <span className="text-sm text-gray-500">/ {currentQuestion.points}점</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="border border-gray-200 rounded-md p-2 h-48 overflow-y-auto space-y-3">
+                  {evaluationCriteria.map((criterion) => {
+                    return (
+                      <div key={criterion.id} className="border-b border-gray-100 pb-2 last:border-b-0">
+                        <div className="font-semibold text-[10px] text-gray-800 mb-1">
+                          {criterion.name} ({criterion.ratio}%)
+                        </div>
+                        <div className="space-y-1.5 pl-2">
+                          {criterion.subCriteria.map((sub) => {
+                            const subMaxScore = (sub.ratio / 100) * currentQuestion.points;
+                            const subKey = `${key}-${criterion.id}-${sub.id}`;
+                            const subScore = currentEvaluationScores[subKey] ?? 0;
+                            return (
+                              <div key={sub.id} className="text-[9px]">
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <span className="text-gray-700">
+                                    {sub.definition} ({sub.ratio}%)
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max={subMaxScore}
+                                      step="0.5"
+                                      value={subScore}
+                                      onChange={(e) => {
+                                        const newScore = Math.max(0, Math.min(subMaxScore, Number(e.target.value) || 0));
+                                        setEvaluationScores((prev) => ({
+                                          ...prev,
+                                          [key]: {
+                                            ...(prev[key] || {}),
+                                            [subKey]: newScore,
+                                          },
+                                        }));
+                                      }}
+                                      className="w-12 px-1 py-0.5 text-[9px] border border-gray-300 rounded"
+                                    />
+                                    <span className="text-[9px] text-gray-500">/ {subMaxScore.toFixed(1)}</span>
+                                  </div>
+                                </div>
+                                <div className="text-gray-500 text-[8px] pl-1">
+                                  요인: {sub.factor}
                                 </div>
                               </div>
-                              <div className="text-gray-500 text-[8px] pl-1">
-                                요인: {sub.factor}
-                              </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
             <div>
               <div className="flex items-center justify-between mb-2">
