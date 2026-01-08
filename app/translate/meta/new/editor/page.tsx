@@ -479,7 +479,7 @@ export default function MetaTranslationEditorPage() {
     } = {};
 
     ['section1', 'section2', 'section3', 'section4'].forEach((sectionId) => {
-      const baseContent = data?.sections?.[sectionId as keyof typeof data.sections] as string || '';
+      const baseContent = (data?.sections?.[sectionId as keyof typeof data?.sections] as string) || '';
       const sectionSentences = Array.from(selectedSentences.entries()).filter(
         ([_, sentence]) => sentence.section === sectionId
       );
@@ -663,7 +663,7 @@ export default function MetaTranslationEditorPage() {
                 </p>
                 <div className="whitespace-pre-wrap leading-relaxed">
                   {renderClickableSentences(
-                    data.sections?.section1Content || '원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다.',
+                    data?.sections?.section1Content || '원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다.',
                     'left',
                     'section1'
                   )}
@@ -676,7 +676,7 @@ export default function MetaTranslationEditorPage() {
                 </p>
                 <div className="whitespace-pre-wrap leading-relaxed">
                   {renderClickableSentences(
-                    data.sections?.section2Content || originalContent || 'This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed.',
+                    data?.sections?.section2Content || originalContent || 'This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed.',
                     'left',
                     'section2'
                   )}
@@ -689,7 +689,7 @@ export default function MetaTranslationEditorPage() {
                 </p>
                 <div className="whitespace-pre-wrap leading-relaxed">
                   {renderClickableSentences(
-                    data.sections?.section3Content || 'This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed.',
+                    data?.sections?.section3Content || 'This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed.',
                     'left',
                     'section3'
                   )}
@@ -771,7 +771,7 @@ export default function MetaTranslationEditorPage() {
                   </p>
                   <div className="whitespace-pre-wrap leading-relaxed">
                     {renderClickableSentences(
-                      data.sections?.section1Content || '원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다.',
+                      data?.sections?.section1Content || '원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다. 원문 내용이 여기에 표시됩니다.',
                       'middle',
                       'section1'
                     )}
@@ -784,7 +784,7 @@ export default function MetaTranslationEditorPage() {
                   </p>
                   <div className="whitespace-pre-wrap leading-relaxed">
                     {renderClickableSentences(
-                      data.sections?.section2Content || aiContent || 'This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed.',
+                      data?.sections?.section2Content || aiContent || 'This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed.',
                       'middle',
                       'section2'
                     )}
@@ -797,7 +797,7 @@ export default function MetaTranslationEditorPage() {
                   </p>
                   <div className="whitespace-pre-wrap leading-relaxed">
                     {renderClickableSentences(
-                      data.sections?.section3Content || 'This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed.',
+                      data?.sections?.section3Content || 'This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed. This is the area where the example answer is displayed.',
                       'middle',
                       'section3'
                     )}
@@ -832,7 +832,7 @@ export default function MetaTranslationEditorPage() {
                           <h4 className="font-semibold text-gray-900 mb-1 text-xs">1. 원문</h4>
                           <div className="text-xs">
                             {renderClickableSentences(
-                              data.sections?.section1Content || '원문 내용이 여기에 표시됩니다.',
+                              data?.sections?.section1Content || '원문 내용이 여기에 표시됩니다.',
                               `middle-split${index}` as 'middle-split1' | 'middle-split2',
                               'section1'
                             )}
@@ -842,7 +842,7 @@ export default function MetaTranslationEditorPage() {
                           <h4 className="font-semibold text-gray-900 mb-1 text-xs">2. 목적</h4>
                           <div className="text-xs">
                             {renderClickableSentences(
-                              data.sections?.section2Content || 'This is the area where the example answer is displayed. This is the area where the example answer is displayed.',
+                              data?.sections?.section2Content || 'This is the area where the example answer is displayed. This is the area where the example answer is displayed.',
                               `middle-split${index}` as 'middle-split1' | 'middle-split2',
                               'section2'
                             )}
@@ -852,7 +852,7 @@ export default function MetaTranslationEditorPage() {
                           <h4 className="font-semibold text-gray-900 mb-1 text-xs">3. 내용</h4>
                           <div className="text-xs">
                             {renderClickableSentences(
-                              data.sections?.section3Content || 'This is the area where the example answer is displayed. This is the area where the example answer is displayed.',
+                              data?.sections?.section3Content || 'This is the area where the example answer is displayed. This is the area where the example answer is displayed.',
                               `middle-split${index}` as 'middle-split1' | 'middle-split2',
                               'section3'
                             )}
@@ -891,7 +891,7 @@ export default function MetaTranslationEditorPage() {
                           <h4 className="font-semibold text-gray-900 mb-1 text-xs">1. 원문</h4>
                           <div className="text-xs">
                             {renderClickableSentences(
-                              data.sections?.section1Content || '원문 내용이 여기에 표시됩니다.',
+                              data?.sections?.section1Content || '원문 내용이 여기에 표시됩니다.',
                               `middle-split${index}` as 'middle-split1' | 'middle-split2' | 'middle-split3' | 'middle-split4',
                               'section1'
                             )}
@@ -901,7 +901,7 @@ export default function MetaTranslationEditorPage() {
                           <h4 className="font-semibold text-gray-900 mb-1 text-xs">2. 목적</h4>
                           <div className="text-xs">
                             {renderClickableSentences(
-                              data.sections?.section2Content || 'This is the area where the example answer is displayed.',
+                              data?.sections?.section2Content || 'This is the area where the example answer is displayed.',
                               `middle-split${index}` as 'middle-split1' | 'middle-split2' | 'middle-split3' | 'middle-split4',
                               'section2'
                             )}
@@ -911,7 +911,7 @@ export default function MetaTranslationEditorPage() {
                           <h4 className="font-semibold text-gray-900 mb-1 text-xs">3. 내용</h4>
                           <div className="text-xs">
                             {renderClickableSentences(
-                              data.sections?.section3Content || 'This is the area where the example answer is displayed.',
+                              data?.sections?.section3Content || 'This is the area where the example answer is displayed.',
                               `middle-split${index}` as 'middle-split1' | 'middle-split2' | 'middle-split3' | 'middle-split4',
                               'section3'
                             )}
@@ -973,13 +973,13 @@ export default function MetaTranslationEditorPage() {
                     // 기본 내용 가져오기
                     let baseContent = '';
                     if (sectionId === 'section1') {
-                      baseContent = data.sections?.section1Content || section.placeholder;
+                      baseContent = data?.sections?.section1Content || section.placeholder;
                     } else if (sectionId === 'section2') {
-                      baseContent = editorContent || data.sections?.section2Content || section.placeholder;
+                      baseContent = editorContent || data?.sections?.section2Content || section.placeholder;
                     } else if (sectionId === 'section3') {
-                      baseContent = data.sections?.section3Content || section.placeholder;
+                      baseContent = data?.sections?.section3Content || section.placeholder;
                     } else if (sectionId === 'section4') {
-                      baseContent = data.sections?.section4Content || section.placeholder;
+                      baseContent = data?.sections?.section4Content || section.placeholder;
                     } else {
                       baseContent = section.placeholder;
                     }
@@ -1061,7 +1061,7 @@ export default function MetaTranslationEditorPage() {
                   </p>
                   <div className="border border-gray-300 rounded-md p-3 bg-white min-h-[200px]">
                     <div className="whitespace-pre-wrap leading-relaxed text-xs text-gray-700">
-                      {data.sections?.section1Content || '원문 내용이 여기에 표시됩니다.'}
+                      {data?.sections?.section1Content || '원문 내용이 여기에 표시됩니다.'}
                     </div>
                   </div>
                 </div>
@@ -1072,7 +1072,7 @@ export default function MetaTranslationEditorPage() {
                   </p>
                   <div className="border border-gray-300 rounded-md p-3 bg-white min-h-[200px]">
                     <div className="whitespace-pre-wrap leading-relaxed text-xs text-gray-700">
-                      {editorContent || data.sections?.section2Content || 'This is the area where the example answer is displayed.'}
+                      {editorContent || data?.sections?.section2Content || 'This is the area where the example answer is displayed.'}
                     </div>
                   </div>
                 </div>
@@ -1083,7 +1083,7 @@ export default function MetaTranslationEditorPage() {
                   </p>
                   <div className="border border-gray-300 rounded-md p-3 bg-white min-h-[200px]">
                     <div className="whitespace-pre-wrap leading-relaxed text-xs text-gray-700">
-                      {data.sections?.section3Content || 'This is the area where the example answer is displayed.'}
+                      {data?.sections?.section3Content || 'This is the area where the example answer is displayed.'}
                     </div>
                   </div>
                 </div>
@@ -1180,7 +1180,7 @@ export default function MetaTranslationEditorPage() {
                         <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
                           <span className="text-gray-500">수정된 부분: </span>
                           <span className="whitespace-pre-wrap leading-relaxed text-gray-700">
-                            {highlightChanges(data.sections?.section1Content || '', finalResults.section1 || '')}
+                            {highlightChanges(data?.sections?.section1Content || '', finalResults.section1 || '')}
                           </span>
                         </div>
                       )}
@@ -1210,7 +1210,7 @@ export default function MetaTranslationEditorPage() {
                         <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
                           <span className="text-gray-500">수정된 부분: </span>
                           <span className="whitespace-pre-wrap leading-relaxed text-gray-700">
-                            {highlightChanges(data.sections?.section2Content || '', finalResults.section2 || '')}
+                            {highlightChanges(data?.sections?.section2Content || '', finalResults.section2 || '')}
                           </span>
                         </div>
                       )}
@@ -1240,7 +1240,7 @@ export default function MetaTranslationEditorPage() {
                         <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
                           <span className="text-gray-500">수정된 부분: </span>
                           <span className="whitespace-pre-wrap leading-relaxed text-gray-700">
-                            {highlightChanges(data.sections?.section3Content || '', finalResults.section3 || '')}
+                            {highlightChanges(data?.sections?.section3Content || '', finalResults.section3 || '')}
                           </span>
                         </div>
                       )}
@@ -1270,7 +1270,7 @@ export default function MetaTranslationEditorPage() {
                         <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
                           <span className="text-gray-500">수정된 부분: </span>
                           <span className="whitespace-pre-wrap leading-relaxed text-gray-700">
-                            {highlightChanges(data.sections?.section4Content || '', finalResults.section4 || '')}
+                            {highlightChanges(data?.sections?.section4Content || '', finalResults.section4 || '')}
                           </span>
                         </div>
                       )}
