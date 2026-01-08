@@ -34,6 +34,12 @@ const SECTIONS = [
     href: '/admin/ui/translator-editor',
     description: '번역사 작업/에디터 화면 구성을 설정합니다.',
   },
+  {
+    id: 'editor',
+    label: '에디터 UI',
+    href: '/admin/ui/editor',
+    description: '일반 에디터 UI의 구성과 옵션을 설정합니다.',
+  },
 ];
 
 export default function AdminUIPage() {
