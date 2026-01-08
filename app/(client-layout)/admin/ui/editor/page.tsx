@@ -297,8 +297,8 @@ export default function AdminEditorUIPage() {
     if (!section) return;
 
     // 경계 체크
-    let newX = Math.max(1, Math.min(gridX, GRID_COLS - section.width + 1));
-    let newY = Math.max(1, Math.min(gridY, GRID_ROWS - section.height + 1));
+    const newX = Math.max(1, Math.min(gridX, GRID_COLS - section.width + 1));
+    const newY = Math.max(1, Math.min(gridY, GRID_ROWS - section.height + 1));
 
     // 현재 위치와 동일하면 업데이트하지 않음
     if (newX === section.x && newY === section.y) {
@@ -592,8 +592,8 @@ export default function AdminEditorUIPage() {
                       if (!draggingSection) return;
 
                       // 경계 체크
-                      let newX = Math.max(1, Math.min(gridX, GRID_COLS - draggingSection.width + 1));
-                      let newY = Math.max(1, Math.min(gridY, GRID_ROWS - draggingSection.height + 1));
+                      const newX = Math.max(1, Math.min(gridX, GRID_COLS - draggingSection.width + 1));
+                      const newY = Math.max(1, Math.min(gridY, GRID_ROWS - draggingSection.height + 1));
 
                       // 현재 위치와 동일하면 업데이트하지 않음
                       if (newX === draggingSection.x && newY === draggingSection.y) {
