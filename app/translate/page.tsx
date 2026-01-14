@@ -7,7 +7,7 @@ export default function TranslatePage() {
     <div className="max-w-6xl mx-auto px-8 py-12">
       {/* 헤더 */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">번역 서비스</h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Meta 번역 서비스</h1>
         <p className="text-lg text-gray-600">원하는 서비스를 선택하세요</p>
       </div>
 
