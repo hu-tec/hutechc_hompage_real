@@ -140,12 +140,12 @@ const kimApplication = createGradeApplication(
   '민사/상사 소송 서류, 계약서 번역 경력 8년입니다. 대형 로펌 근무 경력과 해외 로스쿨 석사 학위 보유하고 있습니다.'
 );
 
-// 이나라 - 법률 전문, 전문가, 5년 경력
+// 이나라 - 법률 전문, 일반전문가, 5년 경력
 const leeApplication = createGradeApplication(
   '2',
   '2',
   '이나라',
-  '전문가',
+  '일반전문가',
   ['한국어', '영어', '일본어'],
   ['한국인'],
   ['최상', '상'],
@@ -161,12 +161,12 @@ const leeApplication = createGradeApplication(
   '형사사건 피의자/피고인 면담 통역 및 조서 번역 경험 5년입니다. 경찰/검찰기관 수행 이력 포함됩니다.'
 );
 
-// 박글로벌 - 경영 전문, 전문가, 6년 경력
+// 박글로벌 - 경영 전문, 일반전문가, 6년 경력
 const parkApplication = createGradeApplication(
   '3',
   '3',
   '박글로벌',
-  '전문가',
+  '일반전문가',
   ['한국어', '영어', '중국어'],
   ['한국인'],
   ['상', '중'],
@@ -203,12 +203,12 @@ const choiApplication = createGradeApplication(
   '최근 3년간 반도체 장비 특허 명세서 번역 프로젝트 40건 이상 수행하여, 세부 분야에 반도체/특허를 추가 요청드립니다.'
 );
 
-// 오세무 - 세무 전문, 전문가, 5년 경력
+// 오세무 - 세무 전문, 일반전문가, 5년 경력
 const ohApplication = createGradeApplication(
   '5',
   '5',
   '오세무',
-  '전문가',
+  '일반전문가',
   ['한국어', '영어'],
   ['한국인'],
   ['상'],
@@ -224,12 +224,12 @@ const ohApplication = createGradeApplication(
   '세무조정 보고서 번역 누적 120건을 달성하여 레벨 승급을 요청드립니다. 또한 평일 야간 긴급 작업 가능으로 설정 변경을 요청합니다.'
 );
 
-// 정헬스 - 의료 전문, 전문가, 6년 경력
+// 정헬스 - 의료 전문, 일반전문가, 6년 경력
 const jungApplication = createGradeApplication(
   '6',
   '6',
   '정헬스',
-  '전문가',
+  '일반전문가',
   ['한국어', '영어', '일본어'],
   ['한국인'],
   ['최상', '상'],
