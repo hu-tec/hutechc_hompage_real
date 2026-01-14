@@ -27,8 +27,8 @@ export default function AdminTranslatorsLayout({
       {/* 본문 영역: 왼쪽 사이드바 + 오른쪽 컨텐츠 */}
       <div className="max-w-7xl mx-auto px-6 py-8 flex gap-6">
         {/* 왼쪽 사이드바 */}
-        <aside className="w-64 bg-white border border-gray-200 rounded-lg p-4 h-fit">
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">번역사 관리</h2>
+        <aside className="w-72 bg-white border border-gray-200 rounded-lg p-4 h-fit">
+          <h2 className="text-sm font-semibold text-gray-700 mb-3 whitespace-nowrap">번역사 관리</h2>
           <nav>
             <ul className="space-y-1">
               {menuItems.map((item) => {
@@ -37,7 +37,7 @@ export default function AdminTranslatorsLayout({
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className={`block px-3 py-2 rounded-md text-sm transition-colors ${
+                      className={`block px-3 py-2 rounded-md text-sm transition-colors whitespace-nowrap ${
                         isActive
                           ? 'bg-purple-50 text-purple-700 font-semibold'
                           : 'text-gray-700 hover:bg-gray-50'

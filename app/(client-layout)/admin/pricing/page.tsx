@@ -290,9 +290,17 @@ export default function AdminPricingPage() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">가격 설정</h1>
-          <p className="text-gray-600">번역 서비스의 모든 가격을 관리하세요</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">가격 설정</h1>
+            <p className="text-gray-600">번역 서비스의 모든 가격을 관리하세요</p>
+          </div>
+          <Link
+            href="/admin/payment-settlement"
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+          >
+            결제정산페이지 가기 →
+          </Link>
         </div>
 
         {/* 가격표 타입 선택 탭 */}

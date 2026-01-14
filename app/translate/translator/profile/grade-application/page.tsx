@@ -15,7 +15,6 @@ import type {
   CallTime,
   Education,
   OverseasResidence,
-  TranslatorLevel,
 } from '@/types/translatorGrade';
 
 const LANGUAGES: Language[] = [
@@ -53,17 +52,8 @@ const EDUCATION_LEVELS: Education[] = ['고졸이하', '고졸', '초대졸', '�
 
 const OVERSEAS_RESIDENCE: OverseasResidence[] = ['없음', '6개월~1년이면', '1~3년', '4~10년'];
 
-const LEVEL_INFO: Record<TranslatorLevel, { label: string; desc: string }> = {
-  new: { label: '신입', desc: '시험 60점 이상' },
-  C: { label: 'C등급', desc: '1년+ 경력, 70점 이상' },
-  B: { label: 'B등급', desc: '3년+ 경력, 80점 이상' },
-  A: { label: 'A등급', desc: '5년+ 경력, 90점 이상' },
-  native: { label: '원어민', desc: '원어민 번역가' },
-};
-
 interface GradeApplicationForm {
   expertType: ExpertType;
-  expertLevel: { A?: string; B?: string; C?: string };
   availableLanguages: Language[];
   nationality: Nationality[];
   translationLevel: TranslationLevel[];
@@ -77,14 +67,12 @@ interface GradeApplicationForm {
   education: Education[];
   overseasResidence: OverseasResidence[];
   remarks?: string;
-  requestedLevel: TranslatorLevel;
 }
 
 export default function GradeApplicationPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<GradeApplicationForm>({
     expertType: '일반전문가',
-    expertLevel: {},
     availableLanguages: [],
     nationality: [],
     translationLevel: [],
@@ -97,7 +85,6 @@ export default function GradeApplicationPage() {
     callTime: [],
     education: [],
     overseasResidence: [],
-    requestedLevel: 'C',
   });
 
   const handleToggle = <T,>(
@@ -149,46 +136,6 @@ export default function GradeApplicationPage() {
                 >
                   {type}
                 </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 전문가레벨 */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">전문가레벨</label>
-            <div className="grid grid-cols-3 gap-4">
-              {(['A', 'B', 'C'] as const).map((level) => (
-                <div key={level} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={!!formData.expertLevel[level]}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        expertLevel: {
-                          ...formData.expertLevel,
-                          [level]: e.target.checked ? '' : undefined,
-                        },
-                      })
-                    }
-                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                  />
-                  <input
-                    type="text"
-                    value={formData.expertLevel[level] || ''}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        expertLevel: {
-                          ...formData.expertLevel,
-                          [level]: e.target.value,
-                        },
-                      })
-                    }
-                    placeholder={`레벨 ${level} 입력`}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
               ))}
             </div>
           </div>
@@ -409,27 +356,6 @@ export default function GradeApplicationPage() {
             </div>
           </div>
 
-          {/* 신청 등급 */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">신청 등급</label>
-            <div className="grid grid-cols-5 gap-3">
-              {(Object.entries(LEVEL_INFO) as [TranslatorLevel, typeof LEVEL_INFO[TranslatorLevel]][]).map(([key, info]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, requestedLevel: key })}
-                  className={`p-3 border-2 rounded-lg transition-all text-center ${
-                    formData.requestedLevel === key
-                      ? 'border-indigo-600 bg-indigo-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="font-semibold text-sm mb-1">{info.label}</div>
-                  <div className="text-xs text-gray-600">{info.desc}</div>
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* 비고 */}
           <div>
