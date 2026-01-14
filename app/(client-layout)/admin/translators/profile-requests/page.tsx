@@ -491,6 +491,26 @@ function GradeApplicationDetailView({
   onExpertTypeChange: (expertType: ExpertType) => void;
 }) {
   const application = request.gradeApplication;
+  
+  // Hooks는 항상 조건문 전에 호출되어야 함
+  const [editableLevel, setEditableLevel] = useState(request.level);
+  const [editableExpertType, setEditableExpertType] = useState<ExpertType>(
+    application?.expertType || '일반전문가'
+  );
+
+  // request.level이 변경되면 editableLevel도 업데이트
+  useEffect(() => {
+    setEditableLevel(request.level);
+  }, [request.level]);
+
+  // application.expertType이 변경되면 editableExpertType도 업데이트
+  useEffect(() => {
+    if (application?.expertType) {
+      setEditableExpertType(application.expertType);
+    }
+  }, [application?.expertType]);
+
+  // 조건부 반환은 Hooks 호출 후에
   if (!application) {
     return (
       <div className="mt-4 bg-white border border-gray-200 rounded-lg p-6">
@@ -504,20 +524,6 @@ function GradeApplicationDetailView({
       </div>
     );
   }
-  const [editableLevel, setEditableLevel] = useState(request.level);
-  const [editableExpertType, setEditableExpertType] = useState<ExpertType>(application.expertType);
-
-  // request.level이 변경되면 editableLevel도 업데이트
-  useEffect(() => {
-    setEditableLevel(request.level);
-  }, [request.level]);
-
-  // application.expertType이 변경되면 editableExpertType도 업데이트
-  useEffect(() => {
-    if (application.expertType) {
-      setEditableExpertType(application.expertType);
-    }
-  }, [application.expertType]);
 
   const LANGUAGES: Language[] = [
     '한국어', '영어', '중국어', '일본어', '스페인어', '러시아어', '포르투갈어',
