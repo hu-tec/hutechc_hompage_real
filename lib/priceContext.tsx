@@ -58,6 +58,42 @@ export interface PriceSettings {
   
   // 번역사 가격표
   translatorPrices: CategoryPrices;
+
+  // 번역사 비율 설정 (%)
+  translatorRatios: {
+    // 기본 번역 방식별 비율
+    translator_text_ratio: number;
+    translator_voice_ratio: number;
+    translator_video_ratio: number;
+    ai_text_ratio: number;
+    ai_voice_ratio: number;
+    ai_video_ratio: number;
+    // 분야별 추가 요금 비율
+    marketing_ratio: number;
+    law_ratio: number;
+    tech_ratio: number;
+    academic_ratio: number;
+    medical_ratio: number;
+    finance_ratio: number;
+    // 긴급도 할증 비율
+    urgent1_ratio: number;
+    urgent2_ratio: number;
+    // 매칭 방법별 비율
+    match_direct_ratio: number;
+    match_request_ratio: number;
+    match_auto_ratio: number;
+    match_corporate_ratio: number;
+    // 결제 분류별 비율
+    payment_point_per_char_ratio: number;
+    payment_subscribe_per_char_ratio: number;
+    payment_oneoff_per_char_ratio: number;
+    // 결제 내용별 비율 (일반적으로 번역사에게는 해당 없음, 기본값 0)
+    payment_point_charge_ratio: number;
+    payment_basic_sub_ratio: number;
+    payment_standard_sub_ratio: number;
+    payment_premium_sub_ratio: number;
+    payment_service_use_ratio: number;
+  };
 }
 
 interface PriceContextType {
@@ -143,51 +179,81 @@ const DEFAULT_PRICES: PriceSettings = {
     category_small: {},
   },
   
-  // 번역사 가격표 기본값
+  // 번역사 가격표 기본값 (비율 저장용 - price 필드에 비율 % 저장)
   translatorPrices: {
     category_large: {
-      video: { name: '영상', icon: '📹', price: 0 },
-      audio: { name: '음성파일', icon: '🎤', price: 0 },
-      doc: { name: '문서', icon: '📄', price: 0 },
-      field: { name: '세부 분야', icon: '🏷️', price: 0 },
+      video: { name: '영상', icon: '📹', price: 70 }, // 70% 기본값
+      audio: { name: '음성파일', icon: '🎤', price: 70 },
+      doc: { name: '문서', icon: '📄', price: 70 },
+      field: { name: '세부 분야', icon: '🏷️', price: 70 },
     },
     category_mid: {
       video: {
-        'category_mid_video_entertainment': { name: '예능', price: 0 },
-        'category_mid_video_drama': { name: '드라마', price: 0 },
-        'category_mid_video_movie': { name: '영화', price: 0 },
-        'category_mid_video_sns': { name: 'SNS', price: 0 },
-        'category_mid_video_youtube': { name: '유투브', price: 0 },
+        'category_mid_video_entertainment': { name: '예능', price: 70 },
+        'category_mid_video_drama': { name: '드라마', price: 70 },
+        'category_mid_video_movie': { name: '영화', price: 70 },
+        'category_mid_video_sns': { name: 'SNS', price: 70 },
+        'category_mid_video_youtube': { name: '유투브', price: 70 },
       },
       audio: {
-        'category_mid_audio_documentary': { name: '다큐멘터리', price: 0 },
-        'category_mid_audio_announcer': { name: '아나운서', price: 0 },
-        'category_mid_audio_tour_guide': { name: '관광 가이드', price: 0 },
-        'category_mid_audio_curator': { name: '큐레이터', price: 0 },
-        'category_mid_audio_guidance': { name: '안내', price: 0 },
-        'category_mid_audio_simultaneous': { name: '동시통역', price: 0 },
-        'category_mid_audio_lecture': { name: '강의', price: 0 },
-        'category_mid_audio_music': { name: '음악', price: 0 },
+        'category_mid_audio_documentary': { name: '다큐멘터리', price: 70 },
+        'category_mid_audio_announcer': { name: '아나운서', price: 70 },
+        'category_mid_audio_tour_guide': { name: '관광 가이드', price: 70 },
+        'category_mid_audio_curator': { name: '큐레이터', price: 70 },
+        'category_mid_audio_guidance': { name: '안내', price: 70 },
+        'category_mid_audio_simultaneous': { name: '동시통역', price: 70 },
+        'category_mid_audio_lecture': { name: '강의', price: 70 },
+        'category_mid_audio_music': { name: '음악', price: 70 },
       },
       doc: {
-        'category_mid_doc_webtoon': { name: '웹툰', price: 0 },
-        'category_mid_doc_classic': { name: '고전', price: 0 },
-        'category_mid_doc_business': { name: '비즈니스', price: 0 },
-        'category_mid_doc_ppt': { name: 'PPT', price: 0 },
-        'category_mid_doc_business_proposal': { name: '사업소개서', price: 0 },
+        'category_mid_doc_webtoon': { name: '웹툰', price: 70 },
+        'category_mid_doc_classic': { name: '고전', price: 70 },
+        'category_mid_doc_business': { name: '비즈니스', price: 70 },
+        'category_mid_doc_ppt': { name: 'PPT', price: 70 },
+        'category_mid_doc_business_proposal': { name: '사업소개서', price: 70 },
       },
       field: {
-        'category_mid_field_cosmetics': { name: '화장품', price: 0 },
-        'category_mid_field_semiconductor': { name: '반도체', price: 0 },
-        'category_mid_field_defense': { name: '방산', price: 0 },
-        'category_mid_field_news': { name: '뉴스', price: 0 },
-        'category_mid_field_politics': { name: '정치', price: 0 },
-        'category_mid_field_economy': { name: '경제', price: 0 },
-        'category_mid_field_literature': { name: '문학', price: 0 },
-        'category_mid_field_engineering': { name: '공학', price: 0 },
+        'category_mid_field_cosmetics': { name: '화장품', price: 70 },
+        'category_mid_field_semiconductor': { name: '반도체', price: 70 },
+        'category_mid_field_defense': { name: '방산', price: 70 },
+        'category_mid_field_news': { name: '뉴스', price: 70 },
+        'category_mid_field_politics': { name: '정치', price: 70 },
+        'category_mid_field_economy': { name: '경제', price: 70 },
+        'category_mid_field_literature': { name: '문학', price: 70 },
+        'category_mid_field_engineering': { name: '공학', price: 70 },
       },
     },
     category_small: {},
+  },
+
+  // 번역사 비율 설정 (%)
+  translatorRatios: {
+    translator_text_ratio: 70,
+    translator_voice_ratio: 70,
+    translator_video_ratio: 70,
+    ai_text_ratio: 70,
+    ai_voice_ratio: 70,
+    ai_video_ratio: 70,
+    marketing_ratio: 70,
+    law_ratio: 70,
+    tech_ratio: 70,
+    academic_ratio: 70,
+    medical_ratio: 70,
+    finance_ratio: 70,
+    urgent1_ratio: 70,
+    urgent2_ratio: 70,
+    match_direct_ratio: 70,
+    match_request_ratio: 70,
+    match_auto_ratio: 70,
+    match_corporate_ratio: 70,
+    payment_point_per_char_ratio: 70,
+    payment_subscribe_per_char_ratio: 70,
+    payment_oneoff_per_char_ratio: 70,
+    payment_point_charge_ratio: 0,
+    payment_basic_sub_ratio: 0,
+    payment_standard_sub_ratio: 0,
+    payment_premium_sub_ratio: 0,
+    payment_service_use_ratio: 0,
   },
 };
 
@@ -329,7 +395,7 @@ export function PriceProvider({ children }: { children: React.ReactNode }) {
           }
         }
         
-        // 다른 필드들도 병합
+          // 다른 필드들도 병합
         Object.keys(parsed).forEach(key => {
           if (!['category_large', 'category_mid', 'category_small', 'clientPrices', 'translatorPrices',
                 'category_large_video', 'category_large_audio', 'category_large_doc', 'category_large_field',
@@ -347,6 +413,11 @@ export function PriceProvider({ children }: { children: React.ReactNode }) {
             (finalPrices as any)[key] = parsed[key];
           }
         });
+
+        // translatorRatios가 없으면 기본값 설정
+        if (!finalPrices.translatorRatios) {
+          finalPrices.translatorRatios = DEFAULT_PRICES.translatorRatios;
+        }
       }
       
       setPrices(finalPrices as PriceSettings);

@@ -29,6 +29,36 @@ export default function AdminPricingPage() {
   
   // 현재 선택된 가격표 (의뢰자 또는 번역사)
   const currentPrices = priceTableType === 'client' ? prices.clientPrices : prices.translatorPrices;
+  
+  // translatorRatios가 없으면 기본값 사용
+  const translatorRatios = prices.translatorRatios || {
+    translator_text_ratio: 70,
+    translator_voice_ratio: 70,
+    translator_video_ratio: 70,
+    ai_text_ratio: 70,
+    ai_voice_ratio: 70,
+    ai_video_ratio: 70,
+    marketing_ratio: 70,
+    law_ratio: 70,
+    tech_ratio: 70,
+    academic_ratio: 70,
+    medical_ratio: 70,
+    finance_ratio: 70,
+    urgent1_ratio: 70,
+    urgent2_ratio: 70,
+    match_direct_ratio: 70,
+    match_request_ratio: 70,
+    match_auto_ratio: 70,
+    match_corporate_ratio: 70,
+    payment_point_per_char_ratio: 70,
+    payment_subscribe_per_char_ratio: 70,
+    payment_oneoff_per_char_ratio: 70,
+    payment_point_charge_ratio: 0,
+    payment_basic_sub_ratio: 0,
+    payment_standard_sub_ratio: 0,
+    payment_premium_sub_ratio: 0,
+    payment_service_use_ratio: 0,
+  };
 
   const handleAddLanguage = (tier: LanguageTier) => {
     const code = window.prompt('언어 코드를 입력하세요 (예: es)');
@@ -56,6 +86,16 @@ export default function AdminPricingPage() {
 
   const handleChange = (key: keyof PriceSettings, value: number) => {
     updatePrices({ [key]: value });
+    setSaved(false);
+  };
+
+  const handleChangeRatio = (ratioKey: keyof PriceSettings['translatorRatios'], value: number) => {
+    updatePrices({
+      translatorRatios: {
+        ...translatorRatios,
+        [ratioKey]: value,
+      },
+    });
     setSaved(false);
   };
 
@@ -461,74 +501,306 @@ export default function AdminPricingPage() {
             <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
               1️⃣ 번역 방식별 기본 요금
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  번역사 - 텍스트 (₩/단어)
-                </label>
-                <input
-                  type="number"
-                  value={prices.translator_text}
-                  onChange={(e) => handleChange('translator_text', Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
+            {priceTableType === 'client' ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    번역사 - 텍스트 (₩/단어)
+                  </label>
+                  <input
+                    type="number"
+                    value={prices.translator_text}
+                    onChange={(e) => handleChange('translator_text', Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    번역사 - 음성 (₩/분)
+                  </label>
+                  <input
+                    type="number"
+                    value={prices.translator_voice}
+                    onChange={(e) => handleChange('translator_voice', Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    번역사 - 동영상 (₩/분)
+                  </label>
+                  <input
+                    type="number"
+                    value={prices.translator_video}
+                    onChange={(e) => handleChange('translator_video', Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    AI - 텍스트 (₩/글자)
+                  </label>
+                  <input
+                    type="number"
+                    value={prices.ai_text}
+                    onChange={(e) => handleChange('ai_text', Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    AI - 음성 (₩/분)
+                  </label>
+                  <input
+                    type="number"
+                    value={prices.ai_voice}
+                    onChange={(e) => handleChange('ai_voice', Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    AI - 동영상 (₩/분)
+                  </label>
+                  <input
+                    type="number"
+                    value={prices.ai_video}
+                    onChange={(e) => handleChange('ai_video', Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  번역사 - 음성 (₩/분)
-                </label>
-                <input
-                  type="number"
-                  value={prices.translator_voice}
-                  onChange={(e) => handleChange('translator_voice', Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600 mb-4">
+                  의뢰자 가격을 기준으로 번역사가 받을 비율(%)을 설정하세요. <strong>티어별 계수는 자동으로 반영됩니다.</strong>
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      번역사 - 텍스트
+                    </label>
+                    <div className="bg-gray-50 px-3 py-2 rounded-lg text-sm text-gray-600">
+                      기본 가격: ₩{prices.translator_text}/단어
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={translatorRatios.translator_text_ratio}
+                        onChange={(e) => handleChangeRatio('translator_text_ratio', Number(e.target.value))}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="비율 (%)"
+                      />
+                      <span className="text-sm text-gray-600">%</span>
+                    </div>
+                    <div className="bg-blue-50 px-3 py-2 rounded-lg text-sm font-semibold text-blue-700">
+                      번역사 기본 가격: ₩{Math.round(prices.translator_text * translatorRatios.translator_text_ratio / 100)}/단어
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="text-xs text-gray-500 mb-2">티어별 최종 가격 (티어 계수 적용 후):</div>
+                      {(Object.keys(TIER_LABELS) as LanguageTier[]).map((tier) => {
+                        const tierMultiplier = tierMultipliers[tier];
+                        const clientPrice = prices.translator_text * tierMultiplier;
+                        const translatorPrice = Math.round(clientPrice * translatorRatios.translator_text_ratio / 100);
+                        return (
+                          <div key={tier} className="text-xs text-gray-600 mb-1 flex justify-between">
+                            <span>{TIER_LABELS[tier]} (×{tierMultiplier}):</span>
+                            <span className="font-semibold">의뢰자 ₩{Math.round(clientPrice)} → 번역사 ₩{translatorPrice}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      번역사 - 음성
+                    </label>
+                    <div className="bg-gray-50 px-3 py-2 rounded-lg text-sm text-gray-600">
+                      기본 가격: ₩{prices.translator_voice}/분
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={translatorRatios.translator_voice_ratio}
+                        onChange={(e) => handleChangeRatio('translator_voice_ratio', Number(e.target.value))}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="비율 (%)"
+                      />
+                      <span className="text-sm text-gray-600">%</span>
+                    </div>
+                    <div className="bg-blue-50 px-3 py-2 rounded-lg text-sm font-semibold text-blue-700">
+                      번역사 기본 가격: ₩{Math.round(prices.translator_voice * translatorRatios.translator_voice_ratio / 100)}/분
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="text-xs text-gray-500 mb-2">티어별 최종 가격:</div>
+                      {(Object.keys(TIER_LABELS) as LanguageTier[]).map((tier) => {
+                        const tierMultiplier = tierMultipliers[tier];
+                        const clientPrice = prices.translator_voice * tierMultiplier;
+                        const translatorPrice = Math.round(clientPrice * translatorRatios.translator_voice_ratio / 100);
+                        return (
+                          <div key={tier} className="text-xs text-gray-600 mb-1 flex justify-between">
+                            <span>{TIER_LABELS[tier]} (×{tierMultiplier}):</span>
+                            <span className="font-semibold">의뢰자 ₩{Math.round(clientPrice)} → 번역사 ₩{translatorPrice}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      번역사 - 동영상
+                    </label>
+                    <div className="bg-gray-50 px-3 py-2 rounded-lg text-sm text-gray-600">
+                      기본 가격: ₩{prices.translator_video}/분
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={translatorRatios.translator_video_ratio}
+                        onChange={(e) => handleChangeRatio('translator_video_ratio', Number(e.target.value))}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="비율 (%)"
+                      />
+                      <span className="text-sm text-gray-600">%</span>
+                    </div>
+                    <div className="bg-blue-50 px-3 py-2 rounded-lg text-sm font-semibold text-blue-700">
+                      번역사 기본 가격: ₩{Math.round(prices.translator_video * translatorRatios.translator_video_ratio / 100)}/분
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="text-xs text-gray-500 mb-2">티어별 최종 가격:</div>
+                      {(Object.keys(TIER_LABELS) as LanguageTier[]).map((tier) => {
+                        const tierMultiplier = tierMultipliers[tier];
+                        const clientPrice = prices.translator_video * tierMultiplier;
+                        const translatorPrice = Math.round(clientPrice * translatorRatios.translator_video_ratio / 100);
+                        return (
+                          <div key={tier} className="text-xs text-gray-600 mb-1 flex justify-between">
+                            <span>{TIER_LABELS[tier]} (×{tierMultiplier}):</span>
+                            <span className="font-semibold">의뢰자 ₩{Math.round(clientPrice)} → 번역사 ₩{translatorPrice}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      AI - 텍스트
+                    </label>
+                    <div className="bg-gray-50 px-3 py-2 rounded-lg text-sm text-gray-600">
+                      기본 가격: ₩{prices.ai_text}/글자
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={translatorRatios.ai_text_ratio}
+                        onChange={(e) => handleChangeRatio('ai_text_ratio', Number(e.target.value))}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="비율 (%)"
+                      />
+                      <span className="text-sm text-gray-600">%</span>
+                    </div>
+                    <div className="bg-blue-50 px-3 py-2 rounded-lg text-sm font-semibold text-blue-700">
+                      번역사 기본 가격: ₩{Math.round(prices.ai_text * translatorRatios.ai_text_ratio / 100)}/글자
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="text-xs text-gray-500 mb-2">티어별 최종 가격:</div>
+                      {(Object.keys(TIER_LABELS) as LanguageTier[]).map((tier) => {
+                        const tierMultiplier = tierMultipliers[tier];
+                        const clientPrice = prices.ai_text * tierMultiplier;
+                        const translatorPrice = Math.round(clientPrice * translatorRatios.ai_text_ratio / 100);
+                        return (
+                          <div key={tier} className="text-xs text-gray-600 mb-1 flex justify-between">
+                            <span>{TIER_LABELS[tier]} (×{tierMultiplier}):</span>
+                            <span className="font-semibold">의뢰자 ₩{clientPrice.toFixed(1)} → 번역사 ₩{translatorPrice.toFixed(1)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      AI - 음성
+                    </label>
+                    <div className="bg-gray-50 px-3 py-2 rounded-lg text-sm text-gray-600">
+                      기본 가격: ₩{prices.ai_voice}/분
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={translatorRatios.ai_voice_ratio}
+                        onChange={(e) => handleChangeRatio('ai_voice_ratio', Number(e.target.value))}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="비율 (%)"
+                      />
+                      <span className="text-sm text-gray-600">%</span>
+                    </div>
+                    <div className="bg-blue-50 px-3 py-2 rounded-lg text-sm font-semibold text-blue-700">
+                      번역사 기본 가격: ₩{Math.round(prices.ai_voice * translatorRatios.ai_voice_ratio / 100)}/분
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="text-xs text-gray-500 mb-2">티어별 최종 가격:</div>
+                      {(Object.keys(TIER_LABELS) as LanguageTier[]).map((tier) => {
+                        const tierMultiplier = tierMultipliers[tier];
+                        const clientPrice = prices.ai_voice * tierMultiplier;
+                        const translatorPrice = Math.round(clientPrice * translatorRatios.ai_voice_ratio / 100);
+                        return (
+                          <div key={tier} className="text-xs text-gray-600 mb-1 flex justify-between">
+                            <span>{TIER_LABELS[tier]} (×{tierMultiplier}):</span>
+                            <span className="font-semibold">의뢰자 ₩{Math.round(clientPrice)} → 번역사 ₩{translatorPrice}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      AI - 동영상
+                    </label>
+                    <div className="bg-gray-50 px-3 py-2 rounded-lg text-sm text-gray-600">
+                      기본 가격: ₩{prices.ai_video}/분
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={translatorRatios.ai_video_ratio}
+                        onChange={(e) => handleChangeRatio('ai_video_ratio', Number(e.target.value))}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="비율 (%)"
+                      />
+                      <span className="text-sm text-gray-600">%</span>
+                    </div>
+                    <div className="bg-blue-50 px-3 py-2 rounded-lg text-sm font-semibold text-blue-700">
+                      번역사 기본 가격: ₩{Math.round(prices.ai_video * translatorRatios.ai_video_ratio / 100)}/분
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="text-xs text-gray-500 mb-2">티어별 최종 가격:</div>
+                      {(Object.keys(TIER_LABELS) as LanguageTier[]).map((tier) => {
+                        const tierMultiplier = tierMultipliers[tier];
+                        const clientPrice = prices.ai_video * tierMultiplier;
+                        const translatorPrice = Math.round(clientPrice * translatorRatios.ai_video_ratio / 100);
+                        return (
+                          <div key={tier} className="text-xs text-gray-600 mb-1 flex justify-between">
+                            <span>{TIER_LABELS[tier]} (×{tierMultiplier}):</span>
+                            <span className="font-semibold">의뢰자 ₩{Math.round(clientPrice)} → 번역사 ₩{translatorPrice}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  번역사 - 동영상 (₩/분)
-                </label>
-                <input
-                  type="number"
-                  value={prices.translator_video}
-                  onChange={(e) => handleChange('translator_video', Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  AI - 텍스트 (₩/글자)
-                </label>
-                <input
-                  type="number"
-                  value={prices.ai_text}
-                  onChange={(e) => handleChange('ai_text', Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  AI - 음성 (₩/분)
-                </label>
-                <input
-                  type="number"
-                  value={prices.ai_voice}
-                  onChange={(e) => handleChange('ai_voice', Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  AI - 동영상 (₩/분)
-                </label>
-                <input
-                  type="number"
-                  value={prices.ai_video}
-                  onChange={(e) => handleChange('ai_video', Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-            </div>
+            )}
           </div>
 
           {/* 2. 전문 분야별 추가 요금 */}
@@ -536,74 +808,116 @@ export default function AdminPricingPage() {
             <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
               2️⃣ 전문 분야별 추가 요금 (₩/단어)
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  마케팅
-                </label>
-                <input
-                  type="number"
-                  value={prices.marketing}
-                  onChange={(e) => handleChange('marketing', Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
+            {priceTableType === 'client' ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    마케팅
+                  </label>
+                  <input
+                    type="number"
+                    value={prices.marketing}
+                    onChange={(e) => handleChange('marketing', Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    법률
+                  </label>
+                  <input
+                    type="number"
+                    value={prices.law}
+                    onChange={(e) => handleChange('law', Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    기술/IT
+                  </label>
+                  <input
+                    type="number"
+                    value={prices.tech}
+                    onChange={(e) => handleChange('tech', Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    학술/논문
+                  </label>
+                  <input
+                    type="number"
+                    value={prices.academic}
+                    onChange={(e) => handleChange('academic', Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    의료/제약
+                  </label>
+                  <input
+                    type="number"
+                    value={prices.medical}
+                    onChange={(e) => handleChange('medical', Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    금융
+                  </label>
+                  <input
+                    type="number"
+                    value={prices.finance}
+                    onChange={(e) => handleChange('finance', Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  법률
-                </label>
-                <input
-                  type="number"
-                  value={prices.law}
-                  onChange={(e) => handleChange('law', Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600 mb-4">
+                  의뢰자 가격을 기준으로 번역사가 받을 비율(%)을 설정하세요.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {[
+                    { key: 'marketing', label: '마케팅', price: prices.marketing, ratioKey: 'marketing_ratio' as const },
+                    { key: 'law', label: '법률', price: prices.law, ratioKey: 'law_ratio' as const },
+                    { key: 'tech', label: '기술/IT', price: prices.tech, ratioKey: 'tech_ratio' as const },
+                    { key: 'academic', label: '학술/논문', price: prices.academic, ratioKey: 'academic_ratio' as const },
+                    { key: 'medical', label: '의료/제약', price: prices.medical, ratioKey: 'medical_ratio' as const },
+                    { key: 'finance', label: '금융', price: prices.finance, ratioKey: 'finance_ratio' as const },
+                  ].map(({ key, label, price, ratioKey }) => (
+                    <div key={key} className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        {label}
+                      </label>
+                      <div className="bg-gray-50 px-3 py-2 rounded-lg text-sm text-gray-600">
+                        의뢰자 가격: ₩{price}/단어
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={translatorRatios[ratioKey]}
+                          onChange={(e) => handleChangeRatio(ratioKey, Number(e.target.value))}
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="비율 (%)"
+                        />
+                        <span className="text-sm text-gray-600">%</span>
+                      </div>
+                      <div className="bg-blue-50 px-3 py-2 rounded-lg text-sm font-semibold text-blue-700">
+                        번역사 가격: ₩{Math.round(price * translatorRatios[ratioKey] / 100)}/단어
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  기술/IT
-                </label>
-                <input
-                  type="number"
-                  value={prices.tech}
-                  onChange={(e) => handleChange('tech', Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  학술/논문
-                </label>
-                <input
-                  type="number"
-                  value={prices.academic}
-                  onChange={(e) => handleChange('academic', Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  의료/제약
-                </label>
-                <input
-                  type="number"
-                  value={prices.medical}
-                  onChange={(e) => handleChange('medical', Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  금융
-                </label>
-                <input
-                  type="number"
-                  value={prices.finance}
-                  onChange={(e) => handleChange('finance', Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-            </div>
+            )}
           </div>
 
           {/* 3. 긴급도 할증 */}
@@ -611,32 +925,70 @@ export default function AdminPricingPage() {
             <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
               3️⃣ 긴급도별 할증 (%)
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  긴급1 (3일)
-                </label>
-                <input
-                  type="number"
-                  value={prices.urgent1}
-                  onChange={(e) => handleChange('urgent1', Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">기본 금액 대비 할증 비율</p>
+            {priceTableType === 'client' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    긴급1 (3일)
+                  </label>
+                  <input
+                    type="number"
+                    value={prices.urgent1}
+                    onChange={(e) => handleChange('urgent1', Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">기본 금액 대비 할증 비율</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    긴급2 (1일)
+                  </label>
+                  <input
+                    type="number"
+                    value={prices.urgent2}
+                    onChange={(e) => handleChange('urgent2', Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">기본 금액 대비 할증 비율</p>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  긴급2 (1일)
-                </label>
-                <input
-                  type="number"
-                  value={prices.urgent2}
-                  onChange={(e) => handleChange('urgent2', Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">기본 금액 대비 할증 비율</p>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600 mb-4">
+                  의뢰자 긴급도 할증을 기준으로 번역사가 받을 비율(%)을 설정하세요. (할증 금액 자체의 비율)
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {[
+                    { key: 'urgent1', label: '긴급1 (3일)', price: prices.urgent1, ratioKey: 'urgent1_ratio' as const },
+                    { key: 'urgent2', label: '긴급2 (1일)', price: prices.urgent2, ratioKey: 'urgent2_ratio' as const },
+                  ].map(({ key, label, price, ratioKey }) => (
+                    <div key={key} className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        {label}
+                      </label>
+                      <div className="bg-gray-50 px-3 py-2 rounded-lg text-sm text-gray-600">
+                        의뢰자 할증: {price}%
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={translatorRatios[ratioKey]}
+                          onChange={(e) => handleChangeRatio(ratioKey, Number(e.target.value))}
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="비율 (%)"
+                        />
+                        <span className="text-sm text-gray-600">%</span>
+                      </div>
+                      <div className="bg-blue-50 px-3 py-2 rounded-lg text-sm font-semibold text-blue-700">
+                        번역사 할증: {Math.round(price * translatorRatios[ratioKey] / 100)}%
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* 4. 매칭/결제 관련 추가 요금 설정 */}
@@ -646,45 +998,81 @@ export default function AdminPricingPage() {
               <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
                 4️⃣ 매칭 방법별 추가 요금
               </h2>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <div className="font-medium text-gray-800 mb-1">직접 찾기</div>
-                  <input
-                    type="number"
-                    value={prices.match_direct}
-                    onChange={(e) => handleChange('match_direct', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">기본 금액 대비 추가 요금 (₩ 또는 % 기준 자유)</p>
+              {priceTableType === 'client' ? (
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <div className="font-medium text-gray-800 mb-1">직접 찾기</div>
+                    <input
+                      type="number"
+                      value={prices.match_direct}
+                      onChange={(e) => handleChange('match_direct', Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">기본 금액 대비 추가 요금 (₩ 또는 % 기준 자유)</p>
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-800 mb-1">매칭 요청</div>
+                    <input
+                      type="number"
+                      value={prices.match_request}
+                      onChange={(e) => handleChange('match_request', Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-800 mb-1">자동 매칭</div>
+                    <input
+                      type="number"
+                      value={prices.match_auto}
+                      onChange={(e) => handleChange('match_auto', Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-800 mb-1">기타(기업)</div>
+                    <input
+                      type="number"
+                      value={prices.match_corporate}
+                      onChange={(e) => handleChange('match_corporate', Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <div className="font-medium text-gray-800 mb-1">매칭 요청</div>
-                  <input
-                    type="number"
-                    value={prices.match_request}
-                    onChange={(e) => handleChange('match_request', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-xs text-gray-600 mb-3">
+                    의뢰자 가격을 기준으로 번역사가 받을 비율(%)을 설정하세요.
+                  </p>
+                  {[
+                    { key: 'match_direct', label: '직접 찾기', price: prices.match_direct, ratioKey: 'match_direct_ratio' as const },
+                    { key: 'match_request', label: '매칭 요청', price: prices.match_request, ratioKey: 'match_request_ratio' as const },
+                    { key: 'match_auto', label: '자동 매칭', price: prices.match_auto, ratioKey: 'match_auto_ratio' as const },
+                    { key: 'match_corporate', label: '기타(기업)', price: prices.match_corporate, ratioKey: 'match_corporate_ratio' as const },
+                  ].map(({ key, label, price, ratioKey }) => (
+                    <div key={key} className="space-y-2">
+                      <div className="font-medium text-gray-800 text-sm">{label}</div>
+                      <div className="bg-gray-50 px-3 py-2 rounded-lg text-xs text-gray-600">
+                        의뢰자 가격: {price}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={translatorRatios[ratioKey]}
+                          onChange={(e) => handleChangeRatio(ratioKey, Number(e.target.value))}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="비율 (%)"
+                        />
+                        <span className="text-xs text-gray-600">%</span>
+                      </div>
+                      <div className="bg-blue-50 px-3 py-2 rounded-lg text-xs font-semibold text-blue-700">
+                        번역사 가격: {Math.round(price * translatorRatios[ratioKey] / 100)}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <div className="font-medium text-gray-800 mb-1">자동 매칭</div>
-                  <input
-                    type="number"
-                    value={prices.match_auto}
-                    onChange={(e) => handleChange('match_auto', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-                <div>
-                  <div className="font-medium text-gray-800 mb-1">기타(기업)</div>
-                  <input
-                    type="number"
-                    value={prices.match_corporate}
-                    onChange={(e) => handleChange('match_corporate', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-              </div>
+              )}
             </div>
 
             {/* 4-2. 결제 분류별 글자당 금액 */}
@@ -692,35 +1080,70 @@ export default function AdminPricingPage() {
               <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
                 5️⃣ 결제 분류별 단가 (₩/글자)
               </h2>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <div className="font-medium text-gray-800 mb-1">포인트</div>
-                  <input
-                    type="number"
-                    value={prices.payment_point_per_char}
-                    onChange={(e) => handleChange('payment_point_per_char', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
+              {priceTableType === 'client' ? (
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <div className="font-medium text-gray-800 mb-1">포인트</div>
+                    <input
+                      type="number"
+                      value={prices.payment_point_per_char}
+                      onChange={(e) => handleChange('payment_point_per_char', Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-800 mb-1">구독</div>
+                    <input
+                      type="number"
+                      value={prices.payment_subscribe_per_char}
+                      onChange={(e) => handleChange('payment_subscribe_per_char', Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-800 mb-1">1회 결제</div>
+                    <input
+                      type="number"
+                      value={prices.payment_oneoff_per_char}
+                      onChange={(e) => handleChange('payment_oneoff_per_char', Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <div className="font-medium text-gray-800 mb-1">구독</div>
-                  <input
-                    type="number"
-                    value={prices.payment_subscribe_per_char}
-                    onChange={(e) => handleChange('payment_subscribe_per_char', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-xs text-gray-600 mb-3">
+                    의뢰자 가격을 기준으로 번역사가 받을 비율(%)을 설정하세요.
+                  </p>
+                  {[
+                    { key: 'payment_point_per_char', label: '포인트', price: prices.payment_point_per_char, ratioKey: 'payment_point_per_char_ratio' as const },
+                    { key: 'payment_subscribe_per_char', label: '구독', price: prices.payment_subscribe_per_char, ratioKey: 'payment_subscribe_per_char_ratio' as const },
+                    { key: 'payment_oneoff_per_char', label: '1회 결제', price: prices.payment_oneoff_per_char, ratioKey: 'payment_oneoff_per_char_ratio' as const },
+                  ].map(({ key, label, price, ratioKey }) => (
+                    <div key={key} className="space-y-2">
+                      <div className="font-medium text-gray-800 text-sm">{label}</div>
+                      <div className="bg-gray-50 px-3 py-2 rounded-lg text-xs text-gray-600">
+                        의뢰자 가격: ₩{price}/글자
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={translatorRatios[ratioKey]}
+                          onChange={(e) => handleChangeRatio(ratioKey, Number(e.target.value))}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="비율 (%)"
+                        />
+                        <span className="text-xs text-gray-600">%</span>
+                      </div>
+                      <div className="bg-blue-50 px-3 py-2 rounded-lg text-xs font-semibold text-blue-700">
+                        번역사 가격: ₩{Math.round(price * translatorRatios[ratioKey] / 100)}/글자
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <div className="font-medium text-gray-800 mb-1">1회 결제</div>
-                  <input
-                    type="number"
-                    value={prices.payment_oneoff_per_char}
-                    onChange={(e) => handleChange('payment_oneoff_per_char', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-              </div>
+              )}
             </div>
 
             {/* 4-3. 결제 내용별 금액 */}
@@ -728,53 +1151,90 @@ export default function AdminPricingPage() {
               <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
                 6️⃣ 결제 내용별 금액 (₩)
               </h2>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <div className="font-medium text-gray-800 mb-1">포인트 충전</div>
-                  <input
-                    type="number"
-                    value={prices.payment_point_charge}
-                    onChange={(e) => handleChange('payment_point_charge', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
+              {priceTableType === 'client' ? (
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <div className="font-medium text-gray-800 mb-1">포인트 충전</div>
+                    <input
+                      type="number"
+                      value={prices.payment_point_charge}
+                      onChange={(e) => handleChange('payment_point_charge', Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-800 mb-1">베이직 구독</div>
+                    <input
+                      type="number"
+                      value={prices.payment_basic_sub}
+                      onChange={(e) => handleChange('payment_basic_sub', Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-800 mb-1">스탠다드 구독</div>
+                    <input
+                      type="number"
+                      value={prices.payment_standard_sub}
+                      onChange={(e) => handleChange('payment_standard_sub', Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-800 mb-1">프리미엄 구독</div>
+                    <input
+                      type="number"
+                      value={prices.payment_premium_sub}
+                      onChange={(e) => handleChange('payment_premium_sub', Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-800 mb-1">서비스 이용 (1회결제)</div>
+                    <input
+                      type="number"
+                      value={prices.payment_service_use}
+                      onChange={(e) => handleChange('payment_service_use', Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <div className="font-medium text-gray-800 mb-1">베이직 구독</div>
-                  <input
-                    type="number"
-                    value={prices.payment_basic_sub}
-                    onChange={(e) => handleChange('payment_basic_sub', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-xs text-gray-600 mb-3">
+                    의뢰자 가격을 기준으로 번역사가 받을 비율(%)을 설정하세요. (일반적으로 번역사에게는 해당 없음)
+                  </p>
+                  {[
+                    { key: 'payment_point_charge', label: '포인트 충전', price: prices.payment_point_charge, ratioKey: 'payment_point_charge_ratio' as const },
+                    { key: 'payment_basic_sub', label: '베이직 구독', price: prices.payment_basic_sub, ratioKey: 'payment_basic_sub_ratio' as const },
+                    { key: 'payment_standard_sub', label: '스탠다드 구독', price: prices.payment_standard_sub, ratioKey: 'payment_standard_sub_ratio' as const },
+                    { key: 'payment_premium_sub', label: '프리미엄 구독', price: prices.payment_premium_sub, ratioKey: 'payment_premium_sub_ratio' as const },
+                    { key: 'payment_service_use', label: '서비스 이용 (1회결제)', price: prices.payment_service_use, ratioKey: 'payment_service_use_ratio' as const },
+                  ].map(({ key, label, price, ratioKey }) => (
+                    <div key={key} className="space-y-2">
+                      <div className="font-medium text-gray-800 text-sm">{label}</div>
+                      <div className="bg-gray-50 px-3 py-2 rounded-lg text-xs text-gray-600">
+                        의뢰자 가격: ₩{price}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={translatorRatios[ratioKey]}
+                          onChange={(e) => handleChangeRatio(ratioKey, Number(e.target.value))}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="비율 (%)"
+                        />
+                        <span className="text-xs text-gray-600">%</span>
+                      </div>
+                      <div className="bg-blue-50 px-3 py-2 rounded-lg text-xs font-semibold text-blue-700">
+                        번역사 가격: ₩{Math.round(price * translatorRatios[ratioKey] / 100)}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <div className="font-medium text-gray-800 mb-1">스탠다드 구독</div>
-                  <input
-                    type="number"
-                    value={prices.payment_standard_sub}
-                    onChange={(e) => handleChange('payment_standard_sub', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-                <div>
-                  <div className="font-medium text-gray-800 mb-1">프리미엄 구독</div>
-                  <input
-                    type="number"
-                    value={prices.payment_premium_sub}
-                    onChange={(e) => handleChange('payment_premium_sub', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-                <div>
-                  <div className="font-medium text-gray-800 mb-1">서비스 이용 (1회결제)</div>
-                  <input
-                    type="number"
-                    value={prices.payment_service_use}
-                    onChange={(e) => handleChange('payment_service_use', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -829,19 +1289,43 @@ export default function AdminPricingPage() {
                             삭제
                           </button>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <label className="text-xs text-gray-600">가격:</label>
-                          <input
-                            type="number"
-                            value={category.price}
-                            onChange={(e) => {
-                              handleChangeLargeCategoryPrice(key, Number(e.target.value));
-                              e.stopPropagation();
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="기본 가격"
-                          />
+                        <div className="space-y-2">
+                          {priceTableType === 'client' ? (
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs text-gray-600">가격:</label>
+                              <input
+                                type="number"
+                                value={category.price}
+                                onChange={(e) => {
+                                  handleChangeLargeCategoryPrice(key, Number(e.target.value));
+                                  e.stopPropagation();
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="기본 가격"
+                              />
+                            </div>
+                          ) : (
+                            <>
+                              <div className="bg-gray-50 px-2 py-1 rounded text-xs text-gray-600">
+                                의뢰자 가격: {prices.clientPrices.category_large[key]?.price || 0}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <label className="text-xs text-gray-600">번역사 가격:</label>
+                                <input
+                                  type="number"
+                                  value={category.price}
+                                  onChange={(e) => {
+                                    handleChangeLargeCategoryPrice(key, Number(e.target.value));
+                                    e.stopPropagation();
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="번역사 가격"
+                                />
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     ))
@@ -897,19 +1381,43 @@ export default function AdminPricingPage() {
                             삭제
                           </button>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <label className="text-xs text-gray-600">추가 가격:</label>
-                          <input
-                            type="number"
-                            value={category.price}
-                            onChange={(e) => {
-                              handleChangeMidCategoryPrice(selectedLargeCategory, key, Number(e.target.value));
-                              e.stopPropagation();
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="추가 가격"
-                          />
+                        <div className="space-y-2">
+                          {priceTableType === 'client' ? (
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs text-gray-600">추가 가격:</label>
+                              <input
+                                type="number"
+                                value={category.price}
+                                onChange={(e) => {
+                                  handleChangeMidCategoryPrice(selectedLargeCategory, key, Number(e.target.value));
+                                  e.stopPropagation();
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="추가 가격"
+                              />
+                            </div>
+                          ) : (
+                            <>
+                              <div className="bg-gray-50 px-2 py-1 rounded text-xs text-gray-600">
+                                의뢰자 가격: {prices.clientPrices.category_mid[selectedLargeCategory]?.[key]?.price || 0}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <label className="text-xs text-gray-600">번역사 가격:</label>
+                                <input
+                                  type="number"
+                                  value={category.price}
+                                  onChange={(e) => {
+                                    handleChangeMidCategoryPrice(selectedLargeCategory, key, Number(e.target.value));
+                                    e.stopPropagation();
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="번역사 가격"
+                                />
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     ))
@@ -954,16 +1462,34 @@ export default function AdminPricingPage() {
                                 삭제
                               </button>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <label className="text-xs text-gray-600">가격:</label>
-                              <input
-                                type="number"
-                                value={smallPrice}
-                                onChange={(e) => handleChangeSmallCategory(selectedMidCategory, smallName, Number(e.target.value))}
-                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="가격"
-                              />
-                            </div>
+                            {priceTableType === 'client' ? (
+                              <div className="flex items-center gap-2">
+                                <label className="text-xs text-gray-600">가격:</label>
+                                <input
+                                  type="number"
+                                  value={smallPrice}
+                                  onChange={(e) => handleChangeSmallCategory(selectedMidCategory, smallName, Number(e.target.value))}
+                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="가격"
+                                />
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <div className="bg-gray-50 px-2 py-1 rounded text-xs text-gray-600">
+                                  의뢰자 가격: {prices.clientPrices.category_small[selectedMidCategory]?.[smallName] || 0}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <label className="text-xs text-gray-600">번역사 가격:</label>
+                                  <input
+                                    type="number"
+                                    value={smallPrice}
+                                    onChange={(e) => handleChangeSmallCategory(selectedMidCategory, smallName, Number(e.target.value))}
+                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="번역사 가격"
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))
                       ) : (
