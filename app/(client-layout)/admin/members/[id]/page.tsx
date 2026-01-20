@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { use, useState } from 'react';
 
 // Mock 회원 상세 데이터
 const mockMemberDetail = {
@@ -121,7 +121,8 @@ const mockMemberDetail = {
   },
 };
 
-export default function AdminMemberDetailPage({ params }: { params: { id: string } }) {
+export default function AdminMemberDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [inquiryAnswer, setInquiryAnswer] = useState({
     title: '',
     content: '',
@@ -132,7 +133,7 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
   const member = mockMemberDetail;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50" data-member-id={id}>
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-[1600px] mx-auto px-6 h-16 flex items-center justify-between">
