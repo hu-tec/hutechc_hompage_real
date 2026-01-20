@@ -139,6 +139,24 @@ export default function AdminDashboardPage() {
               title="결제 가이드"
               description="결제/요금 관련 안내 페이지"
             />
+            <Card
+              href="/admin/members"
+              icon="👤"
+              title="회원관리"
+              description="플랫폼 회원 정보 조회 및 관리"
+            />
+            <Card
+              href="/admin/admins"
+              icon="🔑"
+              title="관리자 관리"
+              description="관리자 계정 생성, 수정 및 권한 관리"
+            />
+            <Card
+              href="/admin/experts"
+              icon="🎓"
+              title="전문가관리"
+              description="전문가 정보 및 자격 관리"
+            />
           </div>
         </section>
       </main>

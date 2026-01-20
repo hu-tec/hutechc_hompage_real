@@ -1,4 +1,4 @@
-export type ExamType = '번역' | '프롬프트';
+export type ExamType = '번역' | '프롬프트' | '오프라인';
 
 export interface Exam {
   id: number;

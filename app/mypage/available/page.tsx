@@ -94,12 +94,27 @@ const mockExams: ExamCard[] = [
     duration: 50,
     questionCount: 1,
   },
+  {
+    id: 7,
+    title: '오프라인 시험',
+    type: '오프라인',
+    description: '오프라인 시험장에서 진행하는 번역 자격증 시험',
+    category: '오프라인 시험',
+    level: '전문1급',
+    instructor: '시험관',
+    duration: 120,
+    questionCount: 3,
+  },
 ];
 
 export default function AvailableExamsPage() {
   const getExamLink = (exam: ExamCard) => {
     if (exam.type === '번역') {
       return `/mypage/exam/test?id=${exam.id}`;
+    }
+
+    if (exam.type === '오프라인') {
+      return `/mypage/exam/test?id=${exam.id}&type=offline`;
     }
 
     // 임시: "test" 시험만 신규 프롬프트 시험 형태로 라우팅
