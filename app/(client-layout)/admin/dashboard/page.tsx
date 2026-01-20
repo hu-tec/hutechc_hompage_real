@@ -157,6 +157,18 @@ export default function AdminDashboardPage() {
               title="전문가관리"
               description="전문가 정보 및 자격 관리"
             />
+            <Card
+              href="/admin/market"
+              icon="🛒"
+              title="마켓관리"
+              description="창작물·활동·정산 정보 및 회원 마켓 관리"
+            />
+            <Card
+              href="/admin/quote"
+              icon="📄"
+              title="견적서 관리"
+              description="견적 정보·내용·조건 및 회원 기본정보 관리"
+            />
           </div>
         </section>
       </main>
