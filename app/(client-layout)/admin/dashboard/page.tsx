@@ -171,6 +171,23 @@ export default function AdminDashboardPage() {
             />
           </div>
         </section>
+
+        {/* 데이터 관리 */}
+        <section className="mt-10">
+          <div className="flex items-end justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900">데이터 관리</h2>
+            <p className="text-sm text-gray-500">플랫폼 데이터 조회·백업·이관 등</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card
+              href="/admin/data"
+              icon="🗄️"
+              title="데이터 관리"
+              description="데이터 조회, 백업, 이관 및 관리"
+            />
+          </div>
+        </section>
       </main>
     </div>
   );
