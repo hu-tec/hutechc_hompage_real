@@ -201,7 +201,7 @@ export default function AdminExamsPage() {
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [pendingTranslatorId, setPendingTranslatorId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'create' | 'list'>('create');
+  const [activeTab, setActiveTab] = useState<'create' | 'createNew' | 'list'>('create');
   const [draftVersion, setDraftVersion] = useState(0); // 변경 트리거용
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
@@ -270,6 +270,17 @@ export default function AdminExamsPage() {
             </button>
             <button
               type="button"
+              onClick={() => setActiveTab('createNew')}
+              className={`w-full text-left px-3 py-2 rounded-md font-semibold ${
+                activeTab === 'createNew'
+                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                  : 'bg-white text-gray-700 border border-transparent hover:bg-gray-50'
+              }`}
+            >
+              시험 출제하기 (new)
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab('list')}
               className={`w-full text-left px-3 py-2 rounded-md font-semibold ${
                 activeTab === 'list'
@@ -283,7 +294,7 @@ export default function AdminExamsPage() {
 
           {/* 우측: 탭별 내용 */}
           <section className="space-y-6">
-            {activeTab === 'create' ? (
+            {activeTab === 'create' || activeTab === 'createNew' ? (
               <>
                 {/* 상단: 템플릿 불러오기 / 새 시험 / 출시 */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center justify-between gap-6">
@@ -717,7 +728,8 @@ export default function AdminExamsPage() {
                   <span className="text-[11px] text-gray-400">(합계 100% 기준으로 설정)</span>
                 </div>
 
-                {/* 평가 기준 / 파일 종류 */}
+                {/* 평가 기준 / 파일 종류 - createNew 탭에서는 제외 */}
+                {activeTab === 'create' && (
                 <div className="mt-4 border-t border-gray-100 pt-4 space-y-3 text-xs text-gray-700">
                   <h3 className="text-xs font-semibold text-gray-900">평가 기준 · 파일 종류</h3>
                   
@@ -931,6 +943,7 @@ export default function AdminExamsPage() {
                     </div>
                   </div>
                 </div>
+                )}
               </div>
             </div>
 

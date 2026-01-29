@@ -169,6 +169,12 @@ export default function AdminDashboardPage() {
               title="견적서 관리"
               description="견적 정보·내용·조건 및 회원 기본정보 관리"
             />
+            <Card
+              href="/admin/grading"
+              icon="✅"
+              title="채점관리"
+              description="시험 채점 현황 및 채점자 관리"
+            />
           </div>
         </section>
 
