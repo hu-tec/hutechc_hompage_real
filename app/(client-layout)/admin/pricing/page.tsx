@@ -12,6 +12,72 @@ const TIER_LABELS: Record<LanguageTier, string> = {
   tier4: 'Tier 4',
 };
 
+type PriceTableType =
+  | 'client'
+  | 'translator'
+  | 'editor'
+  | 'tuition'
+  | 'proofread'
+  | 'exhibition'
+  | 'expert-review';
+
+const PRICE_TABLE_TYPE_LABELS: Record<PriceTableType, string> = {
+  client: '의뢰자 가격표',
+  translator: '번역사 가격표',
+  editor: '에디터비',
+  tuition: '수업료',
+  proofread: '통독',
+  exhibition: '전시회',
+  'expert-review': '전문가 감수비용측정',
+};
+
+const PLACEHOLDER_TYPES: PriceTableType[] = [];
+
+const EDITOR_ITEMS: { key: string; label: string }[] = [
+  { key: 'editor_doc_form', label: '문서폼 에디터' },
+  { key: 'editor_translation', label: '번역에디터' },
+  { key: 'editor_prompt', label: '프롬프트 에디터' },
+  { key: 'editor_video', label: '영상 에디터' },
+  { key: 'editor_image', label: '이미지 에디터' },
+  { key: 'editor_dev', label: '개발에디터' },
+  { key: 'editor_music', label: '음악 에디터' },
+  { key: 'editor_creative', label: '창의에디터' },
+];
+
+const TUITION_ITEMS: { key: string; label: string }[] = [
+  { key: 'tuition_tesol', label: '테솔' },
+  { key: 'tuition_prompt', label: '프롬프트' },
+  { key: 'tuition_ai_translation', label: 'AI통번역' },
+  { key: 'tuition_itt_exam', label: 'ITT시험' },
+  { key: 'tuition_ethics', label: '윤리' },
+];
+
+const PROOFREAD_ITEMS: { key: string; label: string; group?: string }[] = [
+  { key: 'proofread_doc_use', label: '1. 문서사용' },
+  { key: 'proofread_doc_provide', label: '2. 문서제공' },
+  { key: 'proofread_expert_request', label: '3. 전문가 의뢰비' },
+  { key: 'proofread_doc_sale_general', label: '4-1. 일반 문서 판매', group: '4. 문서판매' },
+  { key: 'proofread_doc_sale_expert', label: '4-2. 전문가 문서 판매', group: '4. 문서판매' },
+];
+
+const EXHIBITION_ITEMS: { key: string; label: string }[] = [
+  { key: 'exhibition_usage', label: '1. 사용료' },
+  { key: 'exhibition_video', label: '2. 영상' },
+  { key: 'exhibition_voice', label: '3. 음성' },
+  { key: 'exhibition_text', label: '4. 텍스트' },
+  { key: 'exhibition_down', label: '5. 다운' },
+];
+
+const EXPERT_REVIEW_ITEMS: { key: string; label: string }[] = [
+  { key: 'expert_email', label: '1. 메일' },
+  { key: 'expert_per_minute', label: '2. 분당' },
+  { key: 'expert_per_hour', label: '3. 시간당' },
+  { key: 'expert_meeting', label: '4. 만남' },
+  { key: 'expert_video', label: '5. 화상' },
+  { key: 'expert_phone', label: '6. 전화' },
+  { key: 'expert_kakao', label: '7. 카톡' },
+];
+
 export default function AdminPricingPage() {
   const { prices, updatePrices } = usePrice();
   const {
@@ -23,10 +89,12 @@ export default function AdminPricingPage() {
     removeLanguage,
   } = useLanguageConfig();
   const [saved, setSaved] = useState(false);
-  const [priceTableType, setPriceTableType] = useState<'client' | 'translator'>('client');
+  const [priceTableType, setPriceTableType] = useState<PriceTableType>('client');
   const [selectedLargeCategory, setSelectedLargeCategory] = useState<string | null>(null);
   const [selectedMidCategory, setSelectedMidCategory] = useState<string | null>(null);
-  
+
+  const isPlaceholderType = PLACEHOLDER_TYPES.includes(priceTableType);
+
   // 현재 선택된 가격표 (의뢰자 또는 번역사)
   const currentPrices = priceTableType === 'client' ? prices.clientPrices : prices.translatorPrices;
   
@@ -96,6 +164,99 @@ export default function AdminPricingPage() {
         [ratioKey]: value,
       },
     });
+    setSaved(false);
+  };
+
+  const handleChangeEditor = (key: string, value: number) => {
+    const editors = { ...(prices.editorPrices || {}) };
+    editors[key] = value;
+    updatePrices({ editorPrices: editors });
+    setSaved(false);
+  };
+
+  const handleChangeTuition = (key: string, value: number) => {
+    const tuition = { ...(prices.tuitionPrices || {}) };
+    tuition[key] = value;
+    updatePrices({ tuitionPrices: tuition });
+    setSaved(false);
+  };
+
+  const handleChangeProofread = (key: string, value: number) => {
+    const proofread = { ...(prices.proofreadPrices || {}) };
+    proofread[key] = value;
+    updatePrices({ proofreadPrices: proofread });
+    setSaved(false);
+  };
+
+  const handleChangeExhibition = (key: string, value: number) => {
+    const ex = { ...(prices.exhibitionPrices || {}) };
+    ex[key] = value;
+    updatePrices({ exhibitionPrices: ex });
+    setSaved(false);
+  };
+
+  const handleAddExhibitionRegion = () => {
+    const name = window.prompt('지역명을 입력하세요 (예: 서울)');
+    if (!name?.trim()) return;
+    const key = name.trim();
+    const regions = { ...(prices.exhibitionRegions || {}) };
+    if (key in regions) {
+      alert('이미 등록된 지역입니다.');
+      return;
+    }
+    regions[key] = 0;
+    updatePrices({ exhibitionRegions: regions });
+    setSaved(false);
+  };
+
+  const handleRemoveExhibitionRegion = (name: string) => {
+    if (!window.confirm(`"${name}" 지역을 삭제하시겠습니까?`)) return;
+    const regions = { ...(prices.exhibitionRegions || {}) };
+    delete regions[name];
+    updatePrices({ exhibitionRegions: regions });
+    setSaved(false);
+  };
+
+  const handleChangeExhibitionRegion = (name: string, value: number) => {
+    const regions = { ...(prices.exhibitionRegions || {}) };
+    regions[name] = value;
+    updatePrices({ exhibitionRegions: regions });
+    setSaved(false);
+  };
+
+  const handleAddExhibitionWork = () => {
+    const name = window.prompt('작품명을 입력하세요');
+    if (!name?.trim()) return;
+    const key = name.trim();
+    const works = { ...(prices.exhibitionWorks || {}) };
+    if (key in works) {
+      alert('이미 등록된 작품입니다.');
+      return;
+    }
+    works[key] = 0;
+    updatePrices({ exhibitionWorks: works });
+    setSaved(false);
+  };
+
+  const handleRemoveExhibitionWork = (name: string) => {
+    if (!window.confirm(`"${name}" 작품을 삭제하시겠습니까?`)) return;
+    const works = { ...(prices.exhibitionWorks || {}) };
+    delete works[name];
+    updatePrices({ exhibitionWorks: works });
+    setSaved(false);
+  };
+
+  const handleChangeExhibitionWork = (name: string, value: number) => {
+    const works = { ...(prices.exhibitionWorks || {}) };
+    works[name] = value;
+    updatePrices({ exhibitionWorks: works });
+    setSaved(false);
+  };
+
+  const handleChangeExpertReview = (key: string, value: number) => {
+    const ex = { ...(prices.expertReviewPrices || {}) };
+    ex[key] = value;
+    updatePrices({ expertReviewPrices: ex });
     setSaved(false);
   };
 
@@ -343,44 +504,342 @@ export default function AdminPricingPage() {
           </Link>
         </div>
 
-        {/* 가격표 타입 선택 탭 */}
+        {/* 가격표 타입 선택 탭 (한 줄) */}
         <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-gray-700">가격표 타입:</span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  setPriceTableType('client');
-                  setSelectedLargeCategory(null);
-                  setSelectedMidCategory(null);
-                }}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  priceTableType === 'client'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                의뢰자 가격표
-              </button>
-              <button
-                onClick={() => {
-                  setPriceTableType('translator');
-                  setSelectedLargeCategory(null);
-                  setSelectedMidCategory(null);
-                }}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  priceTableType === 'translator'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                번역사 가격표
-              </button>
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-sm font-medium text-gray-700 shrink-0">가격표 타입:</span>
+            <div className="flex gap-2 flex-nowrap overflow-x-auto min-w-0 pb-0.5">
+              {(Object.keys(PRICE_TABLE_TYPE_LABELS) as PriceTableType[]).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => {
+                    setPriceTableType(type);
+                    setSelectedLargeCategory(null);
+                    setSelectedMidCategory(null);
+                  }}
+                  className={`shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                    priceTableType === type
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {PRICE_TABLE_TYPE_LABELS[type]}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
         <div className="space-y-8">
+          {isPlaceholderType ? (
+            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+              <p className="text-gray-600 mb-2">
+                <strong className="text-gray-900">{PRICE_TABLE_TYPE_LABELS[priceTableType]}</strong> 설정 화면 준비 중입니다.
+              </p>
+              <p className="text-sm text-gray-500">항목 구성이 확정되면 곧 추가될 예정입니다.</p>
+            </div>
+          ) : priceTableType === 'editor' ? (
+            <>
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
+                  에디터비 설정 (₩)
+                </h2>
+                <p className="text-sm text-gray-600 mb-6">
+                  에디터 유형별 단가를 입력하세요.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {EDITOR_ITEMS.map(({ key, label }) => (
+                    <div key={key}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {label}
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={prices.editorPrices?.[key] ?? 0}
+                        onChange={(e) => handleChangeEditor(key, Number(e.target.value) || 0)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="0"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={handleSave}
+                  className="px-8 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                >
+                  💾 가격 저장
+                </button>
+                {saved && (
+                  <div className="text-green-600 font-semibold flex items-center gap-2">
+                    ✅ 저장되었습니다
+                  </div>
+                )}
+              </div>
+            </>
+          ) : priceTableType === 'tuition' ? (
+            <>
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
+                  수업료 설정 (₩)
+                </h2>
+                <p className="text-sm text-gray-600 mb-6">
+                  과정별 단가를 입력하세요.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {TUITION_ITEMS.map(({ key, label }) => (
+                    <div key={key}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {label}
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={prices.tuitionPrices?.[key] ?? 0}
+                        onChange={(e) => handleChangeTuition(key, Number(e.target.value) || 0)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="0"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={handleSave}
+                  className="px-8 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                >
+                  💾 가격 저장
+                </button>
+                {saved && (
+                  <div className="text-green-600 font-semibold flex items-center gap-2">
+                    ✅ 저장되었습니다
+                  </div>
+                )}
+              </div>
+            </>
+          ) : priceTableType === 'proofread' ? (
+            <div className="max-w-4xl space-y-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
+                  통독 설정 (₩)
+                </h2>
+                <div className="flex flex-col md:flex-row gap-6 md:gap-8">
+                  {/* 1~3: 세로 나열 */}
+                  <div className="space-y-3 min-w-0 md:min-w-[16rem]">
+                    {PROOFREAD_ITEMS.filter(({ group }) => !group).map(({ key, label }) => (
+                      <div key={key} className="flex items-center justify-between gap-4 min-h-10 py-2.5">
+                        <label className="text-sm font-medium text-gray-700 shrink-0 w-32">
+                          {label}
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={prices.proofreadPrices?.[key] ?? 0}
+                          onChange={(e) => handleChangeProofread(key, Number(e.target.value) || 0)}
+                          className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-right"
+                          placeholder="0"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  {/* 4번: 문서판매 (오른쪽 여백) */}
+                  <div className="md:border-l md:border-gray-200 md:pl-8 flex-1 space-y-3">
+                    <div className="text-sm font-semibold text-gray-700 mb-2">4. 문서판매</div>
+                    {PROOFREAD_ITEMS.filter(({ group }) => group).map(({ key, label }) => (
+                      <div key={key} className="flex items-center justify-between gap-4 min-h-10 py-2.5 pl-2">
+                        <label className="text-sm font-medium text-gray-700 shrink-0 w-40">
+                          {label}
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={prices.proofreadPrices?.[key] ?? 0}
+                          onChange={(e) => handleChangeProofread(key, Number(e.target.value) || 0)}
+                          className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-right"
+                          placeholder="0"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={handleSave}
+                  className="px-8 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                >
+                  💾 가격 저장
+                </button>
+                {saved && (
+                  <div className="text-green-600 font-semibold flex items-center gap-2">
+                    ✅ 저장되었습니다
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : priceTableType === 'exhibition' ? (
+            <div className="max-w-4xl space-y-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
+                  전시회 설정 (₩)
+                </h2>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+                  {EXHIBITION_ITEMS.map(({ key, label }) => (
+                    <div key={key} className="flex flex-col gap-1.5 min-h-[4rem]">
+                      <label className="text-sm font-medium text-gray-700">{label}</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={prices.exhibitionPrices?.[key] ?? 0}
+                        onChange={(e) => handleChangeExhibition(key, Number(e.target.value) || 0)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-right"
+                        placeholder="0"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="text-sm font-semibold text-gray-800 mb-3">6. 지역별 · 작품별</div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-medium text-gray-700">지역별</span>
+                        <button
+                          type="button"
+                          onClick={handleAddExhibitionRegion}
+                          className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                          + 추가
+                        </button>
+                      </div>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {Object.keys(prices.exhibitionRegions || {}).length === 0 ? (
+                          <div className="text-xs text-gray-500 py-4 text-center">지역을 추가하세요</div>
+                        ) : (
+                          Object.entries(prices.exhibitionRegions || {}).map(([name, val]) => (
+                            <div key={name} className="flex items-center gap-2 min-h-9">
+                              <span className="text-sm text-gray-700 shrink-0 w-20 truncate" title={name}>{name}</span>
+                              <input
+                                type="number"
+                                min={0}
+                                value={val}
+                                onChange={(e) => handleChangeExhibitionRegion(name, Number(e.target.value) || 0)}
+                                className="flex-1 min-w-0 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-right"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveExhibitionRegion(name)}
+                                className="shrink-0 text-xs text-red-600 hover:text-red-800"
+                              >
+                                삭제
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-medium text-gray-700">작품별</span>
+                        <button
+                          type="button"
+                          onClick={handleAddExhibitionWork}
+                          className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                          + 추가
+                        </button>
+                      </div>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {Object.keys(prices.exhibitionWorks || {}).length === 0 ? (
+                          <div className="text-xs text-gray-500 py-4 text-center">작품을 추가하세요</div>
+                        ) : (
+                          Object.entries(prices.exhibitionWorks || {}).map(([name, val]) => (
+                            <div key={name} className="flex items-center gap-2 min-h-9">
+                              <span className="text-sm text-gray-700 shrink-0 w-20 truncate" title={name}>{name}</span>
+                              <input
+                                type="number"
+                                min={0}
+                                value={val}
+                                onChange={(e) => handleChangeExhibitionWork(name, Number(e.target.value) || 0)}
+                                className="flex-1 min-w-0 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-right"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveExhibitionWork(name)}
+                                className="shrink-0 text-xs text-red-600 hover:text-red-800"
+                              >
+                                삭제
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={handleSave}
+                  className="px-8 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                >
+                  💾 가격 저장
+                </button>
+                {saved && (
+                  <div className="text-green-600 font-semibold flex items-center gap-2">
+                    ✅ 저장되었습니다
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : priceTableType === 'expert-review' ? (
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
+                  전문가 감수비용측정 (₩)
+                </h2>
+                <div className="flex flex-nowrap gap-4 overflow-x-auto min-w-0 pb-1">
+                  {EXPERT_REVIEW_ITEMS.map(({ key, label }) => (
+                    <div
+                      key={key}
+                      className="shrink-0 flex flex-col gap-1.5 w-28"
+                    >
+                      <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                        {label}
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={prices.expertReviewPrices?.[key] ?? 0}
+                        onChange={(e) => handleChangeExpertReview(key, Number(e.target.value) || 0)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-right"
+                        placeholder="0"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={handleSave}
+                  className="px-8 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                >
+                  💾 가격 저장
+                </button>
+                {saved && (
+                  <div className="text-green-600 font-semibold flex items-center gap-2">
+                    ✅ 저장되었습니다
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
           {/* 0. 언어 / 티어 설정 */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
@@ -1519,9 +1978,12 @@ export default function AdminPricingPage() {
               </div>
             )}
           </div>
+            </>
+          )}
         </div>
 
         {/* 미리보기 */}
+        {!isPlaceholderType && priceTableType !== 'editor' && priceTableType !== 'tuition' && priceTableType !== 'proofread' && priceTableType !== 'exhibition' && priceTableType !== 'expert-review' && (
         <div className="mt-12 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200 p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">📊 현재 가격표 미리보기</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
@@ -1547,6 +2009,7 @@ export default function AdminPricingPage() {
             </div>
           </div>
         </div>
+        )}
       </main>
     </div>
   );

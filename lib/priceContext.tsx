@@ -59,6 +59,25 @@ export interface PriceSettings {
   // 번역사 가격표
   translatorPrices: CategoryPrices;
 
+  /** 에디터비 (₩) - 에디터 유형별 단가 */
+  editorPrices: Record<string, number>;
+
+  /** 수업료 (₩) - 과정별 단가 */
+  tuitionPrices: Record<string, number>;
+
+  /** 통독 (₩) - 문서사용·제공·전문가 의뢰·문서판매 등 */
+  proofreadPrices: Record<string, number>;
+
+  /** 전시회 (₩) - 사용료·영상·음성·텍스트·다운 */
+  exhibitionPrices: Record<string, number>;
+  /** 전시회 지역별 (지역명 → 가격) */
+  exhibitionRegions: Record<string, number>;
+  /** 전시회 작품별 (작품명 → 가격) */
+  exhibitionWorks: Record<string, number>;
+
+  /** 전문가 감수비용측정 (₩) - 메일·분당·시간당·만남·화상·전화·카톡 */
+  expertReviewPrices: Record<string, number>;
+
   // 번역사 비율 설정 (%)
   translatorRatios: {
     // 기본 번역 방식별 비율
@@ -224,6 +243,53 @@ const DEFAULT_PRICES: PriceSettings = {
       },
     },
     category_small: {},
+  },
+
+  editorPrices: {
+    editor_doc_form: 0,
+    editor_translation: 0,
+    editor_prompt: 0,
+    editor_video: 0,
+    editor_image: 0,
+    editor_dev: 0,
+    editor_music: 0,
+    editor_creative: 0,
+  },
+
+  tuitionPrices: {
+    tuition_tesol: 0,
+    tuition_prompt: 0,
+    tuition_ai_translation: 0,
+    tuition_itt_exam: 0,
+    tuition_ethics: 0,
+  },
+
+  proofreadPrices: {
+    proofread_doc_use: 0,
+    proofread_doc_provide: 0,
+    proofread_expert_request: 0,
+    proofread_doc_sale_general: 0,
+    proofread_doc_sale_expert: 0,
+  },
+
+  exhibitionPrices: {
+    exhibition_usage: 0,
+    exhibition_video: 0,
+    exhibition_voice: 0,
+    exhibition_text: 0,
+    exhibition_down: 0,
+  },
+  exhibitionRegions: {},
+  exhibitionWorks: {},
+
+  expertReviewPrices: {
+    expert_email: 0,
+    expert_per_minute: 0,
+    expert_per_hour: 0,
+    expert_meeting: 0,
+    expert_video: 0,
+    expert_phone: 0,
+    expert_kakao: 0,
   },
 
   // 번역사 비율 설정 (%)
@@ -418,6 +484,42 @@ export function PriceProvider({ children }: { children: React.ReactNode }) {
         if (!finalPrices.translatorRatios) {
           finalPrices.translatorRatios = DEFAULT_PRICES.translatorRatios;
         }
+
+        // editorPrices: 기본값에 저장값 병합
+        finalPrices.editorPrices = {
+          ...DEFAULT_PRICES.editorPrices,
+          ...(parsed.editorPrices && typeof parsed.editorPrices === 'object' ? parsed.editorPrices : {}),
+        };
+
+        // tuitionPrices: 기본값에 저장값 병합
+        finalPrices.tuitionPrices = {
+          ...DEFAULT_PRICES.tuitionPrices,
+          ...(parsed.tuitionPrices && typeof parsed.tuitionPrices === 'object' ? parsed.tuitionPrices : {}),
+        };
+
+        // proofreadPrices: 기본값에 저장값 병합
+        finalPrices.proofreadPrices = {
+          ...DEFAULT_PRICES.proofreadPrices,
+          ...(parsed.proofreadPrices && typeof parsed.proofreadPrices === 'object' ? parsed.proofreadPrices : {}),
+        };
+
+        // exhibition*: 기본값에 저장값 병합
+        finalPrices.exhibitionPrices = {
+          ...DEFAULT_PRICES.exhibitionPrices,
+          ...(parsed.exhibitionPrices && typeof parsed.exhibitionPrices === 'object' ? parsed.exhibitionPrices : {}),
+        };
+        finalPrices.exhibitionRegions = {
+          ...(parsed.exhibitionRegions && typeof parsed.exhibitionRegions === 'object' ? parsed.exhibitionRegions : {}),
+        };
+        finalPrices.exhibitionWorks = {
+          ...(parsed.exhibitionWorks && typeof parsed.exhibitionWorks === 'object' ? parsed.exhibitionWorks : {}),
+        };
+
+        // expertReviewPrices: 기본값에 저장값 병합
+        finalPrices.expertReviewPrices = {
+          ...DEFAULT_PRICES.expertReviewPrices,
+          ...(parsed.expertReviewPrices && typeof parsed.expertReviewPrices === 'object' ? parsed.expertReviewPrices : {}),
+        };
       }
       
       setPrices(finalPrices as PriceSettings);
@@ -483,6 +585,53 @@ export function PriceProvider({ children }: { children: React.ReactNode }) {
         };
       }
       
+      if (newPrices.editorPrices) {
+        next.editorPrices = {
+          ...prev.editorPrices,
+          ...newPrices.editorPrices,
+        };
+      }
+
+      if (newPrices.tuitionPrices) {
+        next.tuitionPrices = {
+          ...prev.tuitionPrices,
+          ...newPrices.tuitionPrices,
+        };
+      }
+
+      if (newPrices.proofreadPrices) {
+        next.proofreadPrices = {
+          ...prev.proofreadPrices,
+          ...newPrices.proofreadPrices,
+        };
+      }
+
+      if (newPrices.exhibitionPrices) {
+        next.exhibitionPrices = {
+          ...prev.exhibitionPrices,
+          ...newPrices.exhibitionPrices,
+        };
+      }
+      if (newPrices.exhibitionRegions) {
+        next.exhibitionRegions = {
+          ...prev.exhibitionRegions,
+          ...newPrices.exhibitionRegions,
+        };
+      }
+      if (newPrices.exhibitionWorks) {
+        next.exhibitionWorks = {
+          ...prev.exhibitionWorks,
+          ...newPrices.exhibitionWorks,
+        };
+      }
+
+      if (newPrices.expertReviewPrices) {
+        next.expertReviewPrices = {
+          ...prev.expertReviewPrices,
+          ...newPrices.expertReviewPrices,
+        };
+      }
+
       if (newPrices.translatorPrices) {
         const newTranslatorPrices = newPrices.translatorPrices;
         next.translatorPrices = {
@@ -524,7 +673,7 @@ export function PriceProvider({ children }: { children: React.ReactNode }) {
       
           // 다른 필드들은 일반 병합
           Object.keys(newPrices).forEach(key => {
-            if (key !== 'clientPrices' && key !== 'translatorPrices') {
+            if (key !== 'clientPrices' && key !== 'translatorPrices' && key !== 'editorPrices' && key !== 'tuitionPrices' && key !== 'proofreadPrices' && key !== 'exhibitionPrices' && key !== 'exhibitionRegions' && key !== 'exhibitionWorks' && key !== 'expertReviewPrices') {
               (next as Record<string, unknown>)[key] = (newPrices as Record<string, unknown>)[key];
             }
           });
