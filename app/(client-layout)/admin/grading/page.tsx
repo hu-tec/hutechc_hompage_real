@@ -1019,11 +1019,11 @@ export default function AdminGradingPage() {
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        const sheet = savedSheets.find(s => s.id === sheet.id);
-                                        if (sheet) {
-                                          setSheetName(sheet.name);
-                                          setMajorCategories(sheet.majorCategories);
-                                          setAllDetailItems(sheet.detailItems);
+                                        const foundSheet = savedSheets.find(s => s.id === sheet.id);
+                                        if (foundSheet) {
+                                          setSheetName(foundSheet.name);
+                                          setMajorCategories(foundSheet.majorCategories);
+                                          setAllDetailItems(foundSheet.detailItems);
                                           setIsCreatingSheet(true);
                                         }
                                       }}
