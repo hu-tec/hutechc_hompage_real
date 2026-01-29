@@ -639,7 +639,7 @@ export default function AdminGradingPage() {
                       </div>
                     ) : (
                       <div className="text-center py-8 text-gray-500 text-sm">
-                        세부 사항이 없습니다. "+ 세부 사항 추가" 버튼을 클릭하여 추가하세요.
+                        세부 사항이 없습니다. &quot;+ 세부 사항 추가&quot; 버튼을 클릭하여 추가하세요.
                       </div>
                     )}
                   </div>
@@ -883,7 +883,7 @@ export default function AdminGradingPage() {
                     </div>
                   ) : (
                     <div className="text-center py-8 text-gray-500 text-sm">
-                      대분류가 없습니다. "+ 대분류 추가" 버튼을 클릭하여 추가하세요.
+                      대분류가 없습니다. &quot;+ 대분류 추가&quot; 버튼을 클릭하여 추가하세요.
                     </div>
                   )}
                 </div>
