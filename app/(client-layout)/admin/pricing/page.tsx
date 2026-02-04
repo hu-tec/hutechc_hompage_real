@@ -729,6 +729,8 @@ export default function AdminPricingPage() {
                                       price: 0,
                                     },
                                   },
+                                  category_mid: prices.clientPrices.category_mid || {},
+                                  category_small: prices.clientPrices.category_small || {},
                                 },
                               });
                               setSaved(false);
