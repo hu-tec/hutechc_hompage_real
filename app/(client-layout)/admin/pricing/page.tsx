@@ -804,6 +804,8 @@ export default function AdminPricingPage() {
                                       updatePrices({
                                         clientPrices: {
                                           category_large: currentLarge,
+                                          category_mid: prices.clientPrices.category_mid || {},
+                                          category_small: prices.clientPrices.category_small || {},
                                         },
                                       });
                                       setSaved(false);
@@ -837,6 +839,7 @@ export default function AdminPricingPage() {
                                   const largeMid = currentMid[selectedLargeCategory] || {};
                                   updatePrices({
                                     clientPrices: {
+                                      category_large: prices.clientPrices.category_large || {},
                                       category_mid: {
                                         ...currentMid,
                                         [selectedLargeCategory]: {
@@ -847,6 +850,7 @@ export default function AdminPricingPage() {
                                           },
                                         },
                                       },
+                                      category_small: prices.clientPrices.category_small || {},
                                     },
                                   });
                                   setSaved(false);
@@ -914,7 +918,9 @@ export default function AdminPricingPage() {
                                       currentMid[selectedLargeCategory] = largeMid;
                                       updatePrices({
                                         clientPrices: {
+                                          category_large: prices.clientPrices.category_large || {},
                                           category_mid: currentMid,
+                                          category_small: prices.clientPrices.category_small || {},
                                         },
                                       });
                                       setSaved(false);
@@ -984,6 +990,8 @@ export default function AdminPricingPage() {
                                           currentSmall[selectedMidCategory] = midCategory;
                                           updatePrices({
                                             clientPrices: {
+                                              category_large: prices.clientPrices.category_large || {},
+                                              category_mid: prices.clientPrices.category_mid || {},
                                               category_small: currentSmall,
                                             },
                                           });
@@ -1004,6 +1012,8 @@ export default function AdminPricingPage() {
                                         currentSmall[selectedMidCategory] = midCategory;
                                         updatePrices({
                                           clientPrices: {
+                                            category_large: prices.clientPrices.category_large || {},
+                                            category_mid: prices.clientPrices.category_mid || {},
                                             category_small: currentSmall,
                                           },
                                         });
