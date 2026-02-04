@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Plus, Trash2, ChevronDown } from 'lucide-react';
 import { adminTranslators } from '@/lib/adminTranslatorsMock';
 
 type DataSection =
@@ -73,169 +73,141 @@ const INIT_TESOL = [
   { id: 5, unit: '5단원', title: '교실 영어', category: '비즈니스', difficulty: '중급', duration: '45분' },
 ];
 
+// 마케팅 DB 옵션 데이터
+const MARKETING_OPTIONS = {
+  useTech: ['TTT', 'SSS'],
+  majorCategory: ['일반', '전문'],
+  middleCategory: [
+    '비즈니스', '교육', '메타', '작성', '기획서', '번역/통역', '문서', '노무', 
+    '법률', '주식', '부동산', '세금', '방송', '성장', '경쟁', '콘텐츠', '개발', '보안', '예술 및 문화'
+  ],
+  minorCategory: [
+    '사업계획서', '회사소개', 'PPT', '엑셀', '기획서', '법률(소송장, 준비서면, 형사, 민사)', 
+    '의료', '특허', '노무', '교재', '논문', '기사', '고전', '각 업무별 분야별 전문분야',
+    '아나운서', '관광가이드', '큐레이터', '안내 방송', '교육', '실시간', '화상수업',
+    'SNS', '유튜브', '다큐멘터리', '영화', '드라마', '예능', '웹디자인', '모바일디자인',
+    '랜딩페이지', '웹기획', '사업기획', '홍보기획', '백엔드', '프론트', '디비(DB)', '빅데이터',
+    '컨텐츠', '개인정보', '드라마', '웹툰소설', '소설', '시', '음악', '미술', '자가 선택'
+  ],
+  age: ['10대', '20대', '30대', '40대', '50대+'],
+  situationTop: [
+    '커리어 상향', '학업/학습 상향', '문서/업무 상향', '번역/통역 상향', 
+    '전문직 스킬 상향', '의사결정/구매 단계', '인정/동기 상태'
+  ],
+  needsTop: [
+    '자격증 필요(스킬)', '검색 SEO(데이타)', '공식(정부/회사)', '공개 경쟁(뉴스/위키)', 
+    '오피셜(교사/시드백)', '번역/통역(공식)', '문서 작성 속도'
+  ],
+  needsBottom: [
+    '정확성', '속도', '차별화', '직무확장', '재택', '실무경험', '범용자격'
+  ],
+  keyPointAction: [
+    'AI 써도, 틀리지는 않을까 한번 더 체크!', '오류를 먼저 없애고, 내 생각에 집중하여 최종본을 완성합니다.'
+  ],
+  keyPointThought: [
+    'AI 써도, 틀리지는 않을까 한번 더 체크!'
+  ],
+  keyPointApproval: [
+    '감사', '평가', '승인'
+  ],
+  aiKnowledge: [
+    '① 연관성(정확성)', '① 오류(정확성)'
+  ],
+  content: [
+    '① 서비스 소개서', '① FAQ'
+  ],
+  request: [
+    '① 법률 고수 확인', '① 개인정보 수집 여부'
+  ],
+  verification: ['검증 항목'],
+  evaluation: ['평가 항목'],
+  approval: ['승인 항목'],
+  usage: [
+    'ChatGPT(GPT/OpenAI)', 'Gemini', 'Copilot', 'DeepL', 'Google Translate', 'Papago', 
+    'Whisper(STT)', 'Google STT', 'Azure TTS', 'Google TTS', 'OCN(음성 TTS)', 
+    'RAW(실시간 기념 영상)', 'TMS'
+  ],
+};
+
+// 대중소 분류 구조 (두 번째 이미지 기준)
+const CATEGORY_STRUCTURE: Record<string, Record<string, string[]>> = {
+  '공통 - 프롬, 번역': {
+    '문서': ['일반', '전문', '분야'],
+    '음성': ['방송 및 안내', '강의'],
+    '영상': ['콘텐츠'],
+    '개발': ['디자인', '기획', '프로그램', '보안'],
+    '창의적 활동': ['예술 및 문학'],
+  },
+  '프롬프트 별도': {
+    '이미지 제작': ['홍보물(브로셔, 포스터)'],
+    '영상': ['분야선택'],
+    '음성': ['분야 선택'],
+    '문서': ['분야 선택'],
+  },
+  '통역별도': {
+    '순차 통역': ['회의 통역'],
+    '동시 통역': ['회의통역'],
+    '음성통역': ['회의 통역'],
+  },
+  '번역 별도': {
+    '전문': ['화장품', '반도체', '방산', '뉴스', '정치', '경제', '문학', '공학', '부동산', '로봇', '바이오등'],
+  },
+  '확장분야': {
+    '건강': ['암', '요리'],
+    '돈': ['재무', '주식', '부동산'],
+    '사람': ['자녀', '연애', '입시', '사주', '결혼'],
+    '취업': ['영어', '직장찾기'],
+    '기타': ['요리', '운동'],
+  },
+};
+
 // 마케팅 DB 데이터 (타겟별 마케팅 전략 DB)
-const INIT_MARKETING_DATA = [
+const INIT_MARKETING_DATA: MarketingDataRow[] = [
   {
     id: 'mk-1',
-    targetGroup: '일반인',
-    subTarget: '취업준비생',
-    ageGroup: '20~30',
-    needs: '차별화',
-    situation: '스펙부족',
-    purposeOfUse: '취업',
-    channel: '인스타그릴스카드',
-    operationMethod: '',
-    content: '비교콘텐츠',
-    exceptionsHeadline: '블로그에만 올릴 것',
-    subCopy: 'ai 시대, 꾸준한 자기계발은 필수',
-    keyPoint: 'ai 자격증으로 자기계발과 스펙업',
-    ai: '자기계발, 스펙업',
-    aiTeCoreValue: '제미나이 지피티',
-    coreMessage: 'AI 실무능력 검증, AI 실무 자격증',
+    useTech: ['TTT'],
+    majorCategory: ['일반'],
+    middleCategory: ['비즈니스'],
+    minorCategory: ['사업계획서'],
+    age: ['20대', '30대'],
+    situationTop: ['커리어 상향'],
+    situationMiddle: '취업 준비 중이거나 이직 준비 중인 주니어/경력직이 커리어 전환을 위해 필요한 정보를 얻고 싶을 때',
+    needsTop: ['자격증 필요(스킬)'],
+    needsBottom: ['차별화'],
+    keyPointAction: [],
+    keyPointThought: ['AI 써도, 틀리지는 않을까 한번 더 체크!'],
+    keyPointApproval: [],
+    chatbotCopy: '오류를 먼저 없애고, 내 생각에 집중하여 최종본을 완성합니다.',
+    aiKnowledge: ['① 연관성(정확성)'],
+    content: ['① 서비스 소개서'],
+    request: ['① 법률 고수 확인'],
+    verification: [],
+    evaluation: [],
+    approval: [],
+    usage: ['ChatGPT(GPT/OpenAI)', 'Gemini'],
   },
   {
     id: 'mk-2',
-    targetGroup: '일반인',
-    subTarget: '이직직장인',
-    ageGroup: '25~40',
-    needs: '직무확장',
-    situation: '커리어정체',
-    purposeOfUse: '이직',
-    channel: '유튜브숏폼',
-    operationMethod: '',
-    content: '번역비교',
-    exceptionsHeadline: '',
-    subCopy: '',
-    keyPoint: '',
-    ai: '',
-    aiTeCoreValue: '',
-    coreMessage: '',
-  },
-  {
-    id: 'mk-3',
-    targetGroup: '일반인',
-    subTarget: 'N잡·부업',
-    ageGroup: '20~50',
-    needs: '재택',
-    situation: '추가수입',
-    purposeOfUse: '부업',
-    channel: '블로그',
-    operationMethod: 'SEO',
-    content: '후기정보',
-    exceptionsHeadline: '',
-    subCopy: '',
-    keyPoint: '',
-    ai: '번역감수수익, AI 부업 가능',
-    aiTeCoreValue: '',
-    coreMessage: '',
-  },
-  {
-    id: 'mk-4',
-    targetGroup: '일반인',
-    subTarget: '주부',
-    ageGroup: '30~',
-    needs: '',
-    situation: '',
-    purposeOfUse: '',
-    channel: '',
-    operationMethod: '',
-    content: '',
-    exceptionsHeadline: '',
-    subCopy: '',
-    keyPoint: '',
-    ai: '',
-    aiTeCoreValue: '',
-    coreMessage: '',
-  },
-  {
-    id: 'mk-5',
-    targetGroup: '대학생',
-    subTarget: '어문계열',
-    ageGroup: '20대',
-    needs: '실무경험',
-    situation: '',
-    purposeOfUse: '전공활용',
-    channel: '취업',
-    operationMethod: '카페',
-    content: '정보글',
-    exceptionsHeadline: '합격후기',
-    subCopy: '',
-    keyPoint: '',
-    ai: 'AI감수역량, 번역가 미래역량',
-    aiTeCoreValue: '',
-    coreMessage: '',
-  },
-  {
-    id: 'mk-6',
-    targetGroup: '대학생',
-    subTarget: '비전공',
-    ageGroup: '20대',
-    needs: '범용자격',
-    situation: '스펙부족',
-    purposeOfUse: '스펙',
-    channel: '링크드인',
-    operationMethod: '전문글',
-    content: '트렌드',
-    exceptionsHeadline: '',
-    subCopy: '',
-    keyPoint: '',
-    ai: '전공무관, 전공무관 스펙',
-    aiTeCoreValue: '',
-    coreMessage: '',
-  },
-  {
-    id: 'mk-7',
-    targetGroup: '전문가',
-    subTarget: '변호사',
-    ageGroup: '30~60',
-    needs: '정확성',
-    situation: '계약검토',
-    purposeOfUse: '업무',
-    channel: '검색광고',
-    operationMethod: '키워드',
-    content: '자격증',
-    exceptionsHeadline: '',
-    subCopy: '',
-    keyPoint: '',
-    ai: '법률문맥 감수, 법률번역 리스크관리',
-    aiTeCoreValue: '',
-    coreMessage: '',
-  },
-  {
-    id: 'mk-8',
-    targetGroup: '전문가',
-    subTarget: '의사',
-    ageGroup: '30~60',
-    needs: '정확성',
-    situation: '논문번역',
-    purposeOfUse: '연구',
-    channel: '학교제휴',
-    operationMethod: '메일',
-    content: '단체응시',
-    exceptionsHeadline: '',
-    subCopy: '',
-    keyPoint: '',
-    ai: '의학오역 방지, 의학번역 검증',
-    aiTeCoreValue: '',
-    coreMessage: '',
-  },
-  {
-    id: 'mk-9',
-    targetGroup: '전문가',
-    subTarget: '연구원',
-    ageGroup: '30~60',
-    needs: '속도',
-    situation: '자료다수',
-    purposeOfUse: '연구',
-    channel: '기업제휴',
-    operationMethod: '교육',
-    content: '사내교육',
-    exceptionsHeadline: '',
-    subCopy: '',
-    keyPoint: '',
-    ai: 'AI번역 감수, 연구생산성 향상',
-    aiTeCoreValue: '',
-    coreMessage: '',
+    useTech: ['SSS'],
+    majorCategory: ['일반'],
+    middleCategory: ['번역/통역'],
+    minorCategory: ['자가 선택'],
+    age: ['30대', '40대'],
+    situationTop: ['문서/업무 상향'],
+    situationMiddle: '',
+    needsTop: ['번역/통역(공식)'],
+    needsBottom: ['직무확장'],
+    keyPointAction: [],
+    keyPointThought: [],
+    keyPointApproval: [],
+    chatbotCopy: '',
+    aiKnowledge: [],
+    content: [],
+    request: [],
+    verification: [],
+    evaluation: [],
+    approval: [],
+    usage: ['DeepL', 'Google Translate'],
   },
 ];
 
@@ -272,21 +244,46 @@ type TranslationDataRow = { id: string; requestId: string; sourceText: string; t
 type TesolRow = { id: number; unit: string; title: string; category: string; difficulty: string; duration: string };
 type MarketingDataRow = {
   id: string;
-  targetGroup: string; // 타겟구분
-  subTarget: string; // 세부타겟
-  ageGroup: string; // 연령대
-  needs: string; // a 니즈
-  situation: string; // 상황
-  purposeOfUse: string; // 활용 목적
-  channel: string; // 채널
-  operationMethod: string; // 운영방식
-  content: string; // 콘텐츠
-  exceptionsHeadline: string; // 예외사항(헤드라인)
-  subCopy: string; // 서브카피
-  keyPoint: string; // 핵심포인트
-  ai: string; // ai
-  aiTeCoreValue: string; // AITe 핵심가치
-  coreMessage: string; // 핵심메시지
+  // 사용기술 (토글)
+  useTech: string[]; // TTT, SSS
+  // 대분류 (토글)
+  majorCategory: string[]; // 일반, 전문
+  // 중분류 (체크박스)
+  middleCategory: string[]; // 비즈니스, 교육, 메타, 작성, 기획서, 번역/통역, 문서, 노무, 법률, 주식, 부동산, 세금, 방송, 성장, 경쟁, 콘텐츠, 개발, 보안, 예술 및 문화
+  // 소분류 (체크박스)
+  minorCategory: string[]; // 사업계획서, 회사소개, 대학생, 전문직, 주니어, 시니어 등
+  // 나이 (체크박스)
+  age: string[]; // 10대, 20대, 30대, 40대, 50대+
+  // 상황 상 (체크박스)
+  situationTop: string[]; // 커리어 상향, 학업/학습 상향, 문서/업무 상향, 번역/통역 상향, 전문직 스킬 상향, 의사결정/구매 단계, 인정/동기 상태
+  // 상황 중 (텍스트)
+  situationMiddle: string; // 긴 문장
+  // 니즈 상 (체크박스)
+  needsTop: string[]; // 자격증 필요(스킬), 검색 SEO(데이타), 공식(정부/회사), 공개 경쟁(뉴스/위키), 오피셜(교사/시드백), 번역/통역(공식), 문서 작성 속도 등
+  // 니즈 하 (체크박스)
+  needsBottom: string[]; // 체크박스 항목들
+  // 핵심포인트(행동) (체크박스)
+  keyPointAction: string[]; // 체크박스 항목들
+  // 핵심포인트(생각) (체크박스)
+  keyPointThought: string[]; // AI 써도, 틀리지는 않을까 한번 더 체크! 등
+  // 핵심포인트(감사, 평가, 승인) (체크박스)
+  keyPointApproval: string[]; // 체크박스 항목들
+  // 챗봇카피 (텍스트)
+  chatbotCopy: string; // 오류를 먼저 없애고, 내 생각에 집중하여 최종본을 완성합니다. 등
+  // AI 지식(챗봇) (체크박스)
+  aiKnowledge: string[]; // ① 연관성(정확성), ① 오류(정확성) 등
+  // 콘텐츠 (체크박스)
+  content: string[]; // ① 서비스 소개서, ① FAQ 등
+  // 요청사항 (체크박스)
+  request: string[]; // ① 법률 고수 확인, ① 개인정보 수집 여부 등
+  // 검증 (체크박스)
+  verification: string[]; // 체크박스 항목들
+  // 평가 (체크박스)
+  evaluation: string[]; // 체크박스 항목들
+  // 승인 (체크박스)
+  approval: string[]; // 체크박스 항목들
+  // 사용 (체크박스)
+  usage: string[]; // ChatGPT(GPT/OpenAI), Gemini, Copilot, DeepL, Google Translate, Papago, Whisper(STT), Google STT, Azure TTS, Google TTS, OCN(음성 TTS), RAW(실시간 기념 영상), TMS
 };
 
 export default function AdminDataPage() {
@@ -311,6 +308,7 @@ export default function AdminDataPage() {
   const [marketingData, setMarketingData] = useState<MarketingDataRow[]>(() =>
     loadStored('marketingData', INIT_MARKETING_DATA)
   );
+  const [expandedMarketingItems, setExpandedMarketingItems] = useState<Set<number>>(new Set());
 
   const persist = useCallback(() => {
     saveStored('curriculum', curriculum);
@@ -393,21 +391,26 @@ export default function AdminDataPage() {
         ...prev,
         {
           id: `mk-${Date.now()}`,
-          targetGroup: '',
-          subTarget: '',
-          ageGroup: '',
-          needs: '',
-          situation: '',
-          purposeOfUse: '',
-          channel: '',
-          operationMethod: '',
-          content: '',
-          exceptionsHeadline: '',
-          subCopy: '',
-          keyPoint: '',
-          ai: '',
-          aiTeCoreValue: '',
-          coreMessage: '',
+          useTech: [],
+          majorCategory: [],
+          middleCategory: [],
+          minorCategory: [],
+          age: [],
+          situationTop: [],
+          situationMiddle: '',
+          needsTop: [],
+          needsBottom: [],
+          keyPointAction: [],
+          keyPointThought: [],
+          keyPointApproval: [],
+          chatbotCopy: '',
+          aiKnowledge: [],
+          content: [],
+          request: [],
+          verification: [],
+          evaluation: [],
+          approval: [],
+          usage: [],
         },
       ]);
     }
@@ -469,6 +472,75 @@ export default function AdminDataPage() {
 
   const inputCls =
     'w-full px-2 py-1 border border-gray-200 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent';
+
+  // 커스텀 멀티 셀렉트 드롭다운 컴포넌트 (컴팩트 버전)
+  const MultiSelectDropdown = ({
+    options,
+    selected,
+    onChange,
+    placeholder = '선택하세요',
+    label,
+  }: {
+    options: string[];
+    selected: string[];
+    onChange: (selected: string[]) => void;
+    placeholder?: string;
+    label: string;
+  }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+          setIsOpen(false);
+        }
+      };
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const toggleOption = (option: string) => {
+      const newSelected = selected.includes(option)
+        ? selected.filter((s) => s !== option)
+        : [...selected, option];
+      onChange(newSelected);
+    };
+
+    return (
+      <div className="relative" ref={dropdownRef}>
+        <label className="block text-[10px] font-medium text-gray-600 mb-1">{label}</label>
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-full px-2 py-1 text-left border border-gray-300 rounded bg-white text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-transparent flex items-center justify-between"
+        >
+          <span className={`truncate ${selected.length === 0 ? 'text-gray-400' : 'text-gray-900'}`}>
+            {selected.length === 0 ? placeholder : selected.join(', ')}
+          </span>
+          <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform shrink-0 ml-1 ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {isOpen && (
+          <div className="absolute z-50 w-full mt-0.5 bg-white border border-gray-300 rounded shadow-lg max-h-48 overflow-auto">
+            {options.map((option) => (
+              <label
+                key={option}
+                className="flex items-center px-2 py-1 hover:bg-gray-50 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={selected.includes(option)}
+                  onChange={() => toggleOption(option)}
+                  className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                />
+                <span className="ml-1.5 text-xs text-gray-700">{option}</span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -989,7 +1061,7 @@ export default function AdminDataPage() {
               <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                 <div>
                   <h2 className="text-base font-semibold text-gray-900">7. 마케팅 디비 정리</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">타겟별 마케팅 전략 DB (다중선택·블로그 콘텐츠 입력 가능)</p>
+                  <p className="text-xs text-gray-500 mt-0.5">타겟별 마케팅 전략 DB (토글·체크박스·대중소 분류)</p>
                 </div>
                 <button
                   type="button"
@@ -999,89 +1071,470 @@ export default function AdminDataPage() {
                   <Plus className="w-4 h-4" /> 추가
                 </button>
               </div>
-              <div className="p-4 overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 px-3 font-medium text-gray-700 sticky left-0 bg-white z-10">ID</th>
-                      <th className="text-left py-2 px-3 font-medium text-gray-700">타겟구분</th>
-                      <th className="text-left py-2 px-3 font-medium text-gray-700">세부타겟</th>
-                      <th className="text-left py-2 px-3 font-medium text-gray-700">연령대</th>
-                      <th className="text-left py-2 px-3 font-medium text-gray-700">a 니즈</th>
-                      <th className="text-left py-2 px-3 font-medium text-gray-700">상황</th>
-                      <th className="text-left py-2 px-3 font-medium text-gray-700">활용 목적</th>
-                      <th className="text-left py-2 px-3 font-medium text-gray-700">채널</th>
-                      <th className="text-left py-2 px-3 font-medium text-gray-700">운영방식</th>
-                      <th className="text-left py-2 px-3 font-medium text-gray-700">콘텐츠</th>
-                      <th className="text-left py-2 px-3 font-medium text-gray-700">예외사항(헤드라인)</th>
-                      <th className="text-left py-2 px-3 font-medium text-gray-700">서브카피</th>
-                      <th className="text-left py-2 px-3 font-medium text-gray-700">핵심포인트</th>
-                      <th className="text-left py-2 px-3 font-medium text-gray-700">ai</th>
-                      <th className="text-left py-2 px-3 font-medium text-gray-700">AITe 핵심가치</th>
-                      <th className="text-left py-2 px-3 font-medium text-gray-700">핵심메시지</th>
-                      <th className="w-10 sticky right-0 bg-white z-10" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {marketingData.map((r, i) => (
-                      <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50/50">
-                        <td className="py-1 px-2 sticky left-0 bg-white z-10">
-                          <input value={r.id} onChange={(e) => updateMarketing(i, { id: e.target.value })} className={`${inputCls} font-mono text-xs w-16`} />
-                        </td>
-                        <td className="py-1 px-2">
-                          <input value={r.targetGroup} onChange={(e) => updateMarketing(i, { targetGroup: e.target.value })} className={inputCls} placeholder="일반인, 대학생, 전문가" />
-                        </td>
-                        <td className="py-1 px-2">
-                          <input value={r.subTarget} onChange={(e) => updateMarketing(i, { subTarget: e.target.value })} className={inputCls} placeholder="취업준비생, 이직직장인..." />
-                        </td>
-                        <td className="py-1 px-2">
-                          <input value={r.ageGroup} onChange={(e) => updateMarketing(i, { ageGroup: e.target.value })} className={inputCls} placeholder="20~30" />
-                        </td>
-                        <td className="py-1 px-2">
-                          <input value={r.needs} onChange={(e) => updateMarketing(i, { needs: e.target.value })} className={inputCls} placeholder="차별화, 직무확장..." />
-                        </td>
-                        <td className="py-1 px-2">
-                          <input value={r.situation} onChange={(e) => updateMarketing(i, { situation: e.target.value })} className={inputCls} placeholder="스펙부족, 커리어정체..." />
-                        </td>
-                        <td className="py-1 px-2">
-                          <input value={r.purposeOfUse} onChange={(e) => updateMarketing(i, { purposeOfUse: e.target.value })} className={inputCls} placeholder="취업, 이직, 부업..." />
-                        </td>
-                        <td className="py-1 px-2">
-                          <input value={r.channel} onChange={(e) => updateMarketing(i, { channel: e.target.value })} className={inputCls} placeholder="인스타그릴스카드, 유튜브숏폼..." />
-                        </td>
-                        <td className="py-1 px-2">
-                          <input value={r.operationMethod} onChange={(e) => updateMarketing(i, { operationMethod: e.target.value })} className={inputCls} placeholder="SEO, 키워드, 메일..." />
-                        </td>
-                        <td className="py-1 px-2">
-                          <input value={r.content} onChange={(e) => updateMarketing(i, { content: e.target.value })} className={inputCls} placeholder="비교콘텐츠, 번역비교, 후기정보..." />
-                        </td>
-                        <td className="py-1 px-2">
-                          <input value={r.exceptionsHeadline} onChange={(e) => updateMarketing(i, { exceptionsHeadline: e.target.value })} className={inputCls} placeholder="블로그에만 올릴 것, 합격후기..." />
-                        </td>
-                        <td className="py-1 px-2">
-                          <input value={r.subCopy} onChange={(e) => updateMarketing(i, { subCopy: e.target.value })} className={inputCls} placeholder="ai 시대, 꾸준한 자기계발은 필수" />
-                        </td>
-                        <td className="py-1 px-2">
-                          <input value={r.keyPoint} onChange={(e) => updateMarketing(i, { keyPoint: e.target.value })} className={inputCls} placeholder="ai 자격증으로 자기계발과 스펙업" />
-                        </td>
-                        <td className="py-1 px-2">
-                          <input value={r.ai} onChange={(e) => updateMarketing(i, { ai: e.target.value })} className={inputCls} placeholder="자기계발, 스펙업, 번역감수수익..." />
-                        </td>
-                        <td className="py-1 px-2">
-                          <input value={r.aiTeCoreValue} onChange={(e) => updateMarketing(i, { aiTeCoreValue: e.target.value })} className={inputCls} placeholder="제미나이 지피티" />
-                        </td>
-                        <td className="py-1 px-2">
-                          <input value={r.coreMessage} onChange={(e) => updateMarketing(i, { coreMessage: e.target.value })} className={inputCls} placeholder="AI 실무능력 검증, AI 실무 자격증" />
-                        </td>
-                        <td className="py-1 px-2 sticky right-0 bg-white z-10">
-                          <button type="button" onClick={() => removeRow('marketing', i)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="p-3 space-y-3">
+                {marketingData.map((r, i) => {
+                  const isExpanded = expandedMarketingItems.has(i);
+                  return (
+                  <div key={r.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                    {/* 헤더 */}
+                    <div className="flex items-center justify-between gap-2 p-2 bg-gray-50 hover:bg-gray-100 cursor-pointer" onClick={() => {
+                      const newExpanded = new Set(expandedMarketingItems);
+                      if (isExpanded) {
+                        newExpanded.delete(i);
+                      } else {
+                        newExpanded.add(i);
+                      }
+                      setExpandedMarketingItems(newExpanded);
+                    }}>
+                      <div className="flex items-center gap-2 flex-1">
+                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        <input 
+                          value={r.id} 
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            updateMarketing(i, { id: e.target.value });
+                          }} 
+                          onClick={(e) => e.stopPropagation()}
+                          className={`${inputCls} font-mono text-xs w-24`} 
+                          placeholder="ID"
+                        />
+                        <span className="text-xs text-gray-500">
+                          {r.useTech?.length ? `사용기술: ${r.useTech.join(', ')}` : ''}
+                          {r.majorCategory?.length ? ` | 대분류: ${r.majorCategory.join(', ')}` : ''}
+                        </span>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeRow('marketing', i);
+                        }} 
+                        className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded shrink-0"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    
+                    {/* 내용 */}
+                    {isExpanded && (
+                    <div className="p-3 space-y-2">
+                    
+                    {/* 첫 번째 줄: 사용기술, 대분류, 나이 */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <MultiSelectDropdown
+                        label="사용기술"
+                        options={MARKETING_OPTIONS.useTech}
+                        selected={r.useTech || []}
+                        onChange={(selected: string[]) => updateMarketing(i, { useTech: selected })}
+                        placeholder="선택"
+                      />
+                      <MultiSelectDropdown
+                        label="대분류"
+                        options={MARKETING_OPTIONS.majorCategory}
+                        selected={r.majorCategory || []}
+                        onChange={(selected: string[]) => updateMarketing(i, { majorCategory: selected })}
+                        placeholder="선택"
+                      />
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-600 mb-1">나이</label>
+                        <div className="flex flex-wrap gap-1">
+                          {MARKETING_OPTIONS.age.map((age) => (
+                            <label key={age} className="flex items-center px-1.5 py-0.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(r.age || []).includes(age)}
+                                onChange={(e) => {
+                                  const current = r.age || [];
+                                  const newValue = e.target.checked
+                                    ? [...current, age]
+                                    : current.filter((a) => a !== age);
+                                  updateMarketing(i, { age: newValue });
+                                }}
+                                className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-1 text-[10px] text-gray-700">{age}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 중분류, 소분류 */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-600 mb-1">중분류</label>
+                        <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto p-1.5 border border-gray-200 rounded">
+                          {MARKETING_OPTIONS.middleCategory.map((cat) => (
+                            <label key={cat} className="flex items-center px-1.5 py-0.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(r.middleCategory || []).includes(cat)}
+                                onChange={(e) => {
+                                  const current = r.middleCategory || [];
+                                  const newValue = e.target.checked
+                                    ? [...current, cat]
+                                    : current.filter((c) => c !== cat);
+                                  updateMarketing(i, { middleCategory: newValue });
+                                }}
+                                className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-1 text-[10px] text-gray-700">{cat}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-600 mb-1">소분류</label>
+                        <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto p-1.5 border border-gray-200 rounded">
+                          {MARKETING_OPTIONS.minorCategory.map((cat) => (
+                            <label key={cat} className="flex items-center px-1.5 py-0.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(r.minorCategory || []).includes(cat)}
+                                onChange={(e) => {
+                                  const current = r.minorCategory || [];
+                                  const newValue = e.target.checked
+                                    ? [...current, cat]
+                                    : current.filter((c) => c !== cat);
+                                  updateMarketing(i, { minorCategory: newValue });
+                                }}
+                                className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-1 text-[10px] text-gray-700">{cat}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 상황 상, 니즈 상, 니즈 하 */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-600 mb-1">상황 상</label>
+                        <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto p-1 border border-gray-200 rounded">
+                          {MARKETING_OPTIONS.situationTop.map((sit) => (
+                            <label key={sit} className="flex items-center px-1 py-0.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(r.situationTop || []).includes(sit)}
+                                onChange={(e) => {
+                                  const current = r.situationTop || [];
+                                  const newValue = e.target.checked
+                                    ? [...current, sit]
+                                    : current.filter((s) => s !== sit);
+                                  updateMarketing(i, { situationTop: newValue });
+                                }}
+                                className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-1 text-[10px] text-gray-700">{sit}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-600 mb-1">니즈 상</label>
+                        <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto p-1 border border-gray-200 rounded">
+                          {MARKETING_OPTIONS.needsTop.map((need) => (
+                            <label key={need} className="flex items-center px-1 py-0.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(r.needsTop || []).includes(need)}
+                                onChange={(e) => {
+                                  const current = r.needsTop || [];
+                                  const newValue = e.target.checked
+                                    ? [...current, need]
+                                    : current.filter((n) => n !== need);
+                                  updateMarketing(i, { needsTop: newValue });
+                                }}
+                                className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-1 text-[10px] text-gray-700">{need}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-600 mb-1">니즈 하</label>
+                        <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto p-1 border border-gray-200 rounded">
+                          {MARKETING_OPTIONS.needsBottom.map((need) => (
+                            <label key={need} className="flex items-center px-1 py-0.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(r.needsBottom || []).includes(need)}
+                                onChange={(e) => {
+                                  const current = r.needsBottom || [];
+                                  const newValue = e.target.checked
+                                    ? [...current, need]
+                                    : current.filter((n) => n !== need);
+                                  updateMarketing(i, { needsBottom: newValue });
+                                }}
+                                className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-1 text-[10px] text-gray-700">{need}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 상황 중 (텍스트) */}
+                    <div>
+                      <label className="block text-[10px] font-medium text-gray-600 mb-1">상황 중</label>
+                      <textarea
+                        value={r.situationMiddle || ''}
+                        onChange={(e) => updateMarketing(i, { situationMiddle: e.target.value })}
+                        className={`${inputCls} w-full h-16 text-xs`}
+                        placeholder="상황 설명을 입력하세요"
+                      />
+                    </div>
+
+                    {/* 핵심포인트들 */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-600 mb-1">핵심포인트(행동)</label>
+                        <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto p-1 border border-gray-200 rounded">
+                          {MARKETING_OPTIONS.keyPointAction.map((kp) => (
+                            <label key={kp} className="flex items-center px-1 py-0.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(r.keyPointAction || []).includes(kp)}
+                                onChange={(e) => {
+                                  const current = r.keyPointAction || [];
+                                  const newValue = e.target.checked
+                                    ? [...current, kp]
+                                    : current.filter((k) => k !== kp);
+                                  updateMarketing(i, { keyPointAction: newValue });
+                                }}
+                                className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-1 text-[10px] text-gray-700">{kp}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-600 mb-1">핵심포인트(생각)</label>
+                        <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto p-1 border border-gray-200 rounded">
+                          {MARKETING_OPTIONS.keyPointThought.map((kp) => (
+                            <label key={kp} className="flex items-center px-1 py-0.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(r.keyPointThought || []).includes(kp)}
+                                onChange={(e) => {
+                                  const current = r.keyPointThought || [];
+                                  const newValue = e.target.checked
+                                    ? [...current, kp]
+                                    : current.filter((k) => k !== kp);
+                                  updateMarketing(i, { keyPointThought: newValue });
+                                }}
+                                className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-1 text-[10px] text-gray-700">{kp}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-600 mb-1">핵심포인트(승인)</label>
+                        <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto p-1 border border-gray-200 rounded">
+                          {MARKETING_OPTIONS.keyPointApproval.map((kp) => (
+                            <label key={kp} className="flex items-center px-1 py-0.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(r.keyPointApproval || []).includes(kp)}
+                                onChange={(e) => {
+                                  const current = r.keyPointApproval || [];
+                                  const newValue = e.target.checked
+                                    ? [...current, kp]
+                                    : current.filter((k) => k !== kp);
+                                  updateMarketing(i, { keyPointApproval: newValue });
+                                }}
+                                className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-1 text-[10px] text-gray-700">{kp}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 챗봇카피, AI 지식, 콘텐츠 */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-600 mb-1">챗봇카피</label>
+                        <textarea
+                          value={r.chatbotCopy || ''}
+                          onChange={(e) => updateMarketing(i, { chatbotCopy: e.target.value })}
+                          className={`${inputCls} w-full h-16 text-xs`}
+                          placeholder="챗봇 응답"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-600 mb-1">AI 지식</label>
+                        <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto p-1 border border-gray-200 rounded">
+                          {MARKETING_OPTIONS.aiKnowledge.map((ai) => (
+                            <label key={ai} className="flex items-center px-1 py-0.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(r.aiKnowledge || []).includes(ai)}
+                                onChange={(e) => {
+                                  const current = r.aiKnowledge || [];
+                                  const newValue = e.target.checked
+                                    ? [...current, ai]
+                                    : current.filter((a) => a !== ai);
+                                  updateMarketing(i, { aiKnowledge: newValue });
+                                }}
+                                className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-1 text-[10px] text-gray-700">{ai}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-600 mb-1">콘텐츠</label>
+                        <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto p-1 border border-gray-200 rounded">
+                          {MARKETING_OPTIONS.content.map((cont) => (
+                            <label key={cont} className="flex items-center px-1 py-0.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(r.content || []).includes(cont)}
+                                onChange={(e) => {
+                                  const current = r.content || [];
+                                  const newValue = e.target.checked
+                                    ? [...current, cont]
+                                    : current.filter((c) => c !== cont);
+                                  updateMarketing(i, { content: newValue });
+                                }}
+                                className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-1 text-[10px] text-gray-700">{cont}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 요청사항, 검증, 평가, 승인 */}
+                    <div className="grid grid-cols-4 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-600 mb-1">요청사항</label>
+                        <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto p-1 border border-gray-200 rounded">
+                          {MARKETING_OPTIONS.request.map((req) => (
+                            <label key={req} className="flex items-center px-1 py-0.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(r.request || []).includes(req)}
+                                onChange={(e) => {
+                                  const current = r.request || [];
+                                  const newValue = e.target.checked
+                                    ? [...current, req]
+                                    : current.filter((r) => r !== req);
+                                  updateMarketing(i, { request: newValue });
+                                }}
+                                className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-1 text-[10px] text-gray-700">{req}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-600 mb-1">검증</label>
+                        <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto p-1 border border-gray-200 rounded">
+                          {MARKETING_OPTIONS.verification.map((ver) => (
+                            <label key={ver} className="flex items-center px-1 py-0.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(r.verification || []).includes(ver)}
+                                onChange={(e) => {
+                                  const current = r.verification || [];
+                                  const newValue = e.target.checked
+                                    ? [...current, ver]
+                                    : current.filter((v) => v !== ver);
+                                  updateMarketing(i, { verification: newValue });
+                                }}
+                                className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-1 text-[10px] text-gray-700">{ver}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-600 mb-1">평가</label>
+                        <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto p-1 border border-gray-200 rounded">
+                          {MARKETING_OPTIONS.evaluation.map((evalItem) => (
+                            <label key={evalItem} className="flex items-center px-1 py-0.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(r.evaluation || []).includes(evalItem)}
+                                onChange={(e) => {
+                                  const current = r.evaluation || [];
+                                  const newValue = e.target.checked
+                                    ? [...current, evalItem]
+                                    : current.filter((item) => item !== evalItem);
+                                  updateMarketing(i, { evaluation: newValue });
+                                }}
+                                className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-1 text-[10px] text-gray-700">{evalItem}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-600 mb-1">승인</label>
+                        <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto p-1 border border-gray-200 rounded">
+                          {MARKETING_OPTIONS.approval.map((app) => (
+                            <label key={app} className="flex items-center px-1 py-0.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(r.approval || []).includes(app)}
+                                onChange={(e) => {
+                                  const current = r.approval || [];
+                                  const newValue = e.target.checked
+                                    ? [...current, app]
+                                    : current.filter((a) => a !== app);
+                                  updateMarketing(i, { approval: newValue });
+                                }}
+                                className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-1 text-[10px] text-gray-700">{app}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 사용 (체크박스) */}
+                    <div>
+                      <label className="block text-[10px] font-medium text-gray-600 mb-1">사용</label>
+                      <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto p-1 border border-gray-200 rounded">
+                        {MARKETING_OPTIONS.usage.map((use) => (
+                          <label key={use} className="flex items-center px-1.5 py-0.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={(r.usage || []).includes(use)}
+                              onChange={(e) => {
+                                const current = r.usage || [];
+                                const newValue = e.target.checked
+                                  ? [...current, use]
+                                  : current.filter((u) => u !== use);
+                                updateMarketing(i, { usage: newValue });
+                              }}
+                              className="w-3 h-3 text-indigo-600 rounded focus:ring-indigo-500"
+                            />
+                            <span className="ml-1 text-[10px] text-gray-700">{use}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    </div>
+                    )}
+                  </div>
+                );
+                })}
               </div>
             </section>
           )}
