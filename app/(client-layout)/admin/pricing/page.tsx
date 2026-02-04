@@ -890,6 +890,7 @@ export default function AdminPricingPage() {
                                       delete currentSmall[key];
                                       updatePrices({
                                         clientPrices: {
+                                          category_large: prices.clientPrices.category_large || {},
                                           category_mid: currentMid,
                                           category_small: currentSmall,
                                         },
