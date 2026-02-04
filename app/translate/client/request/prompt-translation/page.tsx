@@ -8,6 +8,7 @@ import {
   calculateAmountFromStep1,
   type TranslationRequestData,
 } from "@/lib/priceCalculator";
+import { loadStored as loadPromptRules, type PromptRule, MAIN_CATEGORY_LABELS, PRESET_LABELS } from "@/lib/promptRules";
 
 // STEP1과 동일한 카테고리/언어 설정 -----------------
 const MAIN_CATEGORIES = [
@@ -426,11 +427,31 @@ export default function PromptTranslationRequestPage() {
   const [matchingMode, setMatchingMode] =
     useState<"auto" | "direct" | "accepted">("auto");
 
+  // 규정 선택
+  const [availableRules, setAvailableRules] = useState<PromptRule[]>([]);
+  const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null);
+
   const [baseAmount, setBaseAmount] = useState<number>(0);
   const [charCount, setCharCount] = useState<number>(0);
   const [isCalculating, setIsCalculating] = useState(false);
 
   const [errors, setErrors] = useState<string[]>([]);
+
+  // 규정 로드
+  useEffect(() => {
+    const rules = loadPromptRules();
+    setAvailableRules(rules.filter(r => r.enabled));
+    if (rules.length > 0) {
+      const defaultRule = rules.find(r => r.mainCategory === "document" && r.preset === "basic");
+      if (defaultRule) {
+        setSelectedRuleId(defaultRule.id);
+      } else {
+        setSelectedRuleId(rules[0].id);
+      }
+    }
+  }, []);
+
+  const selectedRule = availableRules.find(r => r.id === selectedRuleId);
 
   // 핸들러들 -----------------
   const handleModelToggle = (id: string) => {
@@ -820,6 +841,68 @@ export default function PromptTranslationRequestPage() {
                     placeholder="예: 법률 용어는 원문 유지, 매우 자연스럽게 번역 등"
                   />
                 </div>
+              </div>
+            </section>
+
+            {/* 규정 선택 */}
+            <section className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+              <h2 className="text-sm font-semibold text-gray-900">규정 설정</h2>
+              
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-gray-600 mb-2">대분류</p>
+                  <div className="flex flex-wrap gap-3 text-xs">
+                    {["document", "voice", "video", "creative"].map((cat) => {
+                      const categoryRules = availableRules.filter(r => r.mainCategory === cat);
+                      if (categoryRules.length === 0) return null;
+                      return (
+                        <label key={cat} className="inline-flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="main-category"
+                            value={cat}
+                            checked={selectedRule?.mainCategory === cat}
+                            onChange={() => {
+                              const firstRule = categoryRules[0];
+                              if (firstRule) setSelectedRuleId(firstRule.id);
+                            }}
+                          />
+                          <span>{MAIN_CATEGORY_LABELS[cat as keyof typeof MAIN_CATEGORY_LABELS]}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {selectedRule && (
+                  <div>
+                    <p className="text-xs text-gray-600 mb-2">프리셋</p>
+                    <select
+                      value={selectedRuleId || ""}
+                      onChange={(e) => setSelectedRuleId(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-1.5 bg-white text-xs"
+                    >
+                      {availableRules
+                        .filter(r => r.mainCategory === selectedRule.mainCategory)
+                        .map((rule) => (
+                          <option key={rule.id} value={rule.id}>
+                            {PRESET_LABELS[rule.preset]} ({rule.status === "always" ? "항상적용" : rule.status === "default" ? "기본설정" : "강화모드"})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
+
+                {selectedRule && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded-md text-xs">
+                    <p className="font-semibold text-gray-900 mb-2">선택된 규정 요약</p>
+                    <div className="space-y-1 text-gray-700">
+                      <div><span className="font-medium">대분류:</span> {MAIN_CATEGORY_LABELS[selectedRule.mainCategory]}</div>
+                      <div><span className="font-medium">프리셋:</span> {PRESET_LABELS[selectedRule.preset]}</div>
+                      <div><span className="font-medium">상태:</span> {selectedRule.status === "always" ? "A 항상적용" : selectedRule.status === "default" ? "B 기본설정" : "C 강화모드"}</div>
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
 

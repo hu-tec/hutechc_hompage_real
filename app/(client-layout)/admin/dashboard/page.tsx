@@ -175,6 +175,12 @@ export default function AdminDashboardPage() {
               title="채점관리"
               description="시험 채점 현황 및 채점자 관리"
             />
+            <Card
+              href="/admin/prompt-rules"
+              icon="📋"
+              title="프롬프트 규정 설정"
+              description="프롬프트 번역 규정 관리 및 설정"
+            />
           </div>
         </section>
 
