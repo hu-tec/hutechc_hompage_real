@@ -776,52 +776,6 @@ export default function AllInOneRequestPage() {
               </div>
             </section>
 
-            {/* 언어 */}
-            <section className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
-              <h2 className="text-sm font-semibold text-gray-900">언어 설정</h2>
-
-              <div className="flex flex-wrap items-center gap-3 text-xs">
-                <span className="text-gray-600">출발어</span>
-                <select
-                  className="border border-gray-300 rounded-md px-3 py-1.5 bg-white"
-                  value={sourceMode}
-                  onChange={(e) => setSourceMode(e.target.value as "detect" | "fixed")}
-                >
-                  <option value="detect">언어 감지</option>
-                  <option value="fixed">직접 선택</option>
-                </select>
-                {sourceMode === "fixed" && (
-                  <select
-                    className="border border-gray-300 rounded-md px-3 py-1.5 bg-white min-w-[140px]"
-                    value={fixedSourceLang}
-                    onChange={(e) => setFixedSourceLang(e.target.value)}
-                  >
-                    {LANGUAGES.map((lang) => (
-                      <option key={lang.code} value={lang.code}>
-                        {getLanguageLabel(lang.code)}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              <div>
-                <p className="text-xs text-gray-600 mb-2">도착어 (대상 언어)</p>
-                <div className="flex flex-wrap gap-3 text-xs">
-                  {LANGUAGES.map((lang) => (
-                    <label key={lang.code} className="inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={targetLanguages.includes(lang.code)}
-                        onChange={() => handleTargetToggle(lang.code)}
-                      />
-                      <span>{getLanguageLabel(lang.code)}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </section>
-
             {/* AI / 톤 / 프롬프트 */}
             <section className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
               <h2 className="text-sm font-semibold text-gray-900">AI 설정</h2>
@@ -1059,6 +1013,51 @@ export default function AllInOneRequestPage() {
                       <div className="mt-1 text-[11px] text-gray-500">{u.days} · {u.multiplier}배</div>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900 mb-2">언어 설정</h2>
+
+                <div className="flex flex-wrap items-center gap-3 text-xs mb-3">
+                  <span className="text-gray-600">출발어</span>
+                  <select
+                    className="border border-gray-300 rounded-md px-3 py-1.5 bg-white"
+                    value={sourceMode}
+                    onChange={(e) => setSourceMode(e.target.value as "detect" | "fixed")}
+                  >
+                    <option value="detect">언어 감지</option>
+                    <option value="fixed">직접 선택</option>
+                  </select>
+                  {sourceMode === "fixed" && (
+                    <select
+                      className="border border-gray-300 rounded-md px-3 py-1.5 bg-white min-w-[140px]"
+                      value={fixedSourceLang}
+                      onChange={(e) => setFixedSourceLang(e.target.value)}
+                    >
+                      {LANGUAGES.map((lang) => (
+                        <option key={lang.code} value={lang.code}>
+                          {getLanguageLabel(lang.code)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-600 mb-2">도착어 (대상 언어)</p>
+                  <div className="flex flex-wrap gap-3 text-xs">
+                    {LANGUAGES.map((lang) => (
+                      <label key={lang.code} className="inline-flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={targetLanguages.includes(lang.code)}
+                          onChange={() => handleTargetToggle(lang.code)}
+                        />
+                        <span>{getLanguageLabel(lang.code)}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
 
