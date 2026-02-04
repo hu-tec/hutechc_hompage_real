@@ -16,18 +16,14 @@ type PriceTableType =
   | 'client'
   | 'translator'
   | 'editor'
-  | 'tuition'
-  | 'proofread'
-  | 'exhibition'
+  | 'tuition-proofread-exhibition'
   | 'expert-review';
 
 const PRICE_TABLE_TYPE_LABELS: Record<PriceTableType, string> = {
   client: '의뢰자 가격표',
   translator: '번역사 가격표',
   editor: '에디터비',
-  tuition: '수업료',
-  proofread: '통독',
-  exhibition: '전시회',
+  'tuition-proofread-exhibition': '홈페이지',
   'expert-review': '전문가 감수비용측정',
 };
 
@@ -579,19 +575,497 @@ export default function AdminPricingPage() {
                 )}
               </div>
             </>
-          ) : priceTableType === 'tuition' ? (
-            <>
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
+          ) : priceTableType === 'tuition-proofread-exhibition' ? (
+            <div className="space-y-3">
+              {/* 공통 박스 */}
+              <div className="bg-white rounded-lg border border-gray-200 p-3">
+                <h2 className="text-base font-bold text-gray-900 mb-2 pb-2 border-b">
+                  공통 설정
+                </h2>
+                <div className="flex gap-1.5 overflow-x-auto pb-2 -mr-3 pr-3">
+                  {/* 2. 전문 분야별 추가 요금 */}
+                  <div className="shrink-0 flex-1 min-w-[200px] bg-gray-50 rounded border border-gray-200 p-2">
+                    <h3 className="text-xs font-semibold text-gray-800 mb-2">2️⃣ 전문 분야별 (₩/단어)</h3>
+                    <div className="space-y-1.5">
+                      {[
+                        { key: 'marketing', label: '마케팅' },
+                        { key: 'law', label: '법률' },
+                        { key: 'tech', label: '기술/IT' },
+                        { key: 'academic', label: '학술/논문' },
+                        { key: 'medical', label: '의료/제약' },
+                        { key: 'finance', label: '금융' },
+                      ].map(({ key, label }) => (
+                        <div key={key}>
+                          <label className="block text-xs text-gray-700 mb-0.5">{label}</label>
+                          <input
+                            type="number"
+                            value={prices[key as keyof PriceSettings] as number}
+                            onChange={(e) => handleChange(key as keyof PriceSettings, Number(e.target.value))}
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 3. 긴급도별 할증 */}
+                  <div className="shrink-0 flex-1 min-w-[160px] bg-gray-50 rounded border border-gray-200 p-2">
+                    <h3 className="text-xs font-semibold text-gray-800 mb-2">3️⃣ 긴급도 할증 (%)</h3>
+                    <div className="space-y-1.5">
+                      <div>
+                        <label className="block text-xs text-gray-700 mb-0.5">긴급1 (3일)</label>
+                        <input
+                          type="number"
+                          value={prices.urgent1}
+                          onChange={(e) => handleChange('urgent1', Number(e.target.value))}
+                          className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-700 mb-0.5">긴급2 (1일)</label>
+                        <input
+                          type="number"
+                          value={prices.urgent2}
+                          onChange={(e) => handleChange('urgent2', Number(e.target.value))}
+                          className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 4. 매칭 방법별 추가 요금 */}
+                  <div className="shrink-0 flex-1 min-w-[180px] bg-gray-50 rounded border border-gray-200 p-2">
+                    <h3 className="text-xs font-semibold text-gray-800 mb-2">4️⃣ 매칭 방법별</h3>
+                    <div className="space-y-1.5">
+                      {[
+                        { key: 'match_direct', label: '직접 찾기' },
+                        { key: 'match_request', label: '매칭 요청' },
+                        { key: 'match_auto', label: '자동 매칭' },
+                        { key: 'match_corporate', label: '기타(기업)' },
+                      ].map(({ key, label }) => (
+                        <div key={key}>
+                          <label className="block text-xs text-gray-700 mb-0.5">{label}</label>
+                          <input
+                            type="number"
+                            value={prices[key as keyof PriceSettings] as number}
+                            onChange={(e) => handleChange(key as keyof PriceSettings, Number(e.target.value))}
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 5. 결제 분류별 단가 */}
+                  <div className="shrink-0 flex-1 min-w-[160px] bg-gray-50 rounded border border-gray-200 p-2">
+                    <h3 className="text-xs font-semibold text-gray-800 mb-2">5️⃣ 결제 분류별 (₩/글자)</h3>
+                    <div className="space-y-1.5">
+                      {[
+                        { key: 'payment_point_per_char', label: '포인트' },
+                        { key: 'payment_subscribe_per_char', label: '구독' },
+                        { key: 'payment_oneoff_per_char', label: '1회 결제' },
+                      ].map(({ key, label }) => (
+                        <div key={key}>
+                          <label className="block text-xs text-gray-700 mb-0.5">{label}</label>
+                          <input
+                            type="number"
+                            value={prices[key as keyof PriceSettings] as number}
+                            onChange={(e) => handleChange(key as keyof PriceSettings, Number(e.target.value))}
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 6. 결제 내용별 금액 */}
+                  <div className="shrink-0 flex-1 min-w-[200px] bg-gray-50 rounded border border-gray-200 p-2">
+                    <h3 className="text-xs font-semibold text-gray-800 mb-2">6️⃣ 결제 내용별 (₩)</h3>
+                    <div className="space-y-1.5">
+                      {[
+                        { key: 'payment_point_charge', label: '포인트 충전' },
+                        { key: 'payment_basic_sub', label: '베이직 구독' },
+                        { key: 'payment_standard_sub', label: '스탠다드 구독' },
+                        { key: 'payment_premium_sub', label: '프리미엄 구독' },
+                        { key: 'payment_service_use', label: '서비스 이용' },
+                      ].map(({ key, label }) => (
+                        <div key={key}>
+                          <label className="block text-xs text-gray-700 mb-0.5">{label}</label>
+                          <input
+                            type="number"
+                            value={prices[key as keyof PriceSettings] as number}
+                            onChange={(e) => handleChange(key as keyof PriceSettings, Number(e.target.value))}
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 7. 카테고리별 추가 요금 */}
+                <div className="bg-gray-50 rounded border border-gray-200 p-2 mt-2 w-full">
+                    <h3 className="text-xs font-semibold text-gray-800 mb-2">7️⃣ 카테고리별 (₩/단어 또는 %)</h3>
+                    <p className="text-xs text-gray-600 mb-2">대 → 중 → 소 카테고리 선택</p>
+                    <div className="flex gap-2 h-[200px] border border-gray-200 rounded overflow-hidden">
+                      {/* 왼쪽: 대 카테고리 */}
+                      <div className="w-1/3 border-r border-gray-200 bg-white flex flex-col">
+                        <div className="p-2 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                          <h4 className="text-xs font-semibold text-gray-900">대</h4>
+                          <button
+                            onClick={() => {
+                              const name = window.prompt('대 카테고리 이름을 입력하세요');
+                              if (!name || !name.trim()) return;
+                              const icon = window.prompt('아이콘을 입력하세요 (예: 📹, 🎤)') || '📁';
+                              const key = `large_${Date.now()}`;
+                              const currentLarge = prices.clientPrices.category_large || {};
+                              updatePrices({
+                                clientPrices: {
+                                  category_large: {
+                                    ...currentLarge,
+                                    [key]: {
+                                      name: name.trim(),
+                                      icon: icon.trim(),
+                                      price: 0,
+                                    },
+                                  },
+                                },
+                              });
+                              setSaved(false);
+                            }}
+                            className="px-1.5 py-0.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto">
+                          {prices.clientPrices.category_large && Object.keys(prices.clientPrices.category_large).length > 0 ? (
+                            Object.entries(prices.clientPrices.category_large).map(([key, category]) => (
+                              <div
+                                key={key}
+                                className={`p-2 border-b border-gray-200 cursor-pointer text-xs transition-colors ${
+                                  selectedLargeCategory === key
+                                    ? 'bg-blue-100 border-blue-300'
+                                    : 'bg-white hover:bg-gray-50'
+                                }`}
+                                onClick={() => {
+                                  setSelectedLargeCategory(key);
+                                  setSelectedMidCategory(null);
+                                }}
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="font-medium text-gray-900 truncate">
+                                    {category.icon} {category.name}
+                                  </div>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (!window.confirm(`"${category.name}" 대 카테고리를 삭제하시겠습니까? 하위 카테고리도 모두 삭제됩니다.`)) return;
+                                      const currentLarge = { ...(prices.clientPrices.category_large || {}) };
+                                      delete currentLarge[key];
+                                      const currentMid = { ...(prices.clientPrices.category_mid || {}) };
+                                      delete currentMid[key];
+                                      const currentSmall = { ...(prices.clientPrices.category_small || {}) };
+                                      if (prices.clientPrices.category_mid?.[key]) {
+                                        Object.keys(prices.clientPrices.category_mid[key]).forEach((midKey) => {
+                                          delete currentSmall[midKey];
+                                        });
+                                      }
+                                      updatePrices({
+                                        clientPrices: {
+                                          category_large: currentLarge,
+                                          category_mid: currentMid,
+                                          category_small: currentSmall,
+                                        },
+                                      });
+                                      if (selectedLargeCategory === key) {
+                                        setSelectedLargeCategory(null);
+                                        setSelectedMidCategory(null);
+                                      }
+                                      setSaved(false);
+                                    }}
+                                    className="text-xs text-red-600 hover:text-red-800 shrink-0"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                                <input
+                                  type="number"
+                                  value={category.price}
+                                  onChange={(e) => {
+                                    const currentLarge = { ...(prices.clientPrices.category_large || {}) };
+                                    if (currentLarge[key]) {
+                                      currentLarge[key] = {
+                                        ...currentLarge[key],
+                                        price: Number(e.target.value),
+                                      };
+                                      updatePrices({
+                                        clientPrices: {
+                                          category_large: currentLarge,
+                                        },
+                                      });
+                                      setSaved(false);
+                                    }
+                                    e.stopPropagation();
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  placeholder="가격"
+                                />
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-2 text-xs text-gray-500 text-center">대 카테고리 없음</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 중간: 중 카테고리 */}
+                      <div className="w-1/3 border-r border-gray-200 bg-white flex flex-col">
+                        <div className="p-2 border-b border-gray-200 bg-gray-50">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-semibold text-gray-900">중</h4>
+                            {selectedLargeCategory && (
+                              <button
+                                onClick={() => {
+                                  const name = window.prompt('중 카테고리 이름을 입력하세요');
+                                  if (!name || !name.trim()) return;
+                                  const midKey = `mid_${selectedLargeCategory}_${Date.now()}`;
+                                  const currentMid = prices.clientPrices.category_mid || {};
+                                  const largeMid = currentMid[selectedLargeCategory] || {};
+                                  updatePrices({
+                                    clientPrices: {
+                                      category_mid: {
+                                        ...currentMid,
+                                        [selectedLargeCategory]: {
+                                          ...largeMid,
+                                          [midKey]: {
+                                            name: name.trim(),
+                                            price: 0,
+                                          },
+                                        },
+                                      },
+                                    },
+                                  });
+                                  setSaved(false);
+                                }}
+                                className="px-1.5 py-0.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                              >
+                                +
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto">
+                          {!selectedLargeCategory ? (
+                            <div className="p-2 text-xs text-gray-500 text-center">대 카테고리 선택</div>
+                          ) : prices.clientPrices.category_mid?.[selectedLargeCategory] && Object.keys(prices.clientPrices.category_mid[selectedLargeCategory]).length > 0 ? (
+                            Object.entries(prices.clientPrices.category_mid[selectedLargeCategory]).map(([key, category]) => (
+                              <div
+                                key={key}
+                                className={`p-2 border-b border-gray-200 cursor-pointer text-xs transition-colors ${
+                                  selectedMidCategory === key
+                                    ? 'bg-blue-100 border-blue-300'
+                                    : 'bg-white hover:bg-gray-50'
+                                }`}
+                                onClick={() => setSelectedMidCategory(key)}
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="font-medium text-gray-900 truncate">{category.name}</div>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (!window.confirm(`"${category.name}" 중 카테고리를 삭제하시겠습니까? 하위 소 카테고리도 모두 삭제됩니다.`)) return;
+                                      const currentMid = { ...(prices.clientPrices.category_mid || {}) };
+                                      const largeMid = { ...(currentMid[selectedLargeCategory] || {}) };
+                                      delete largeMid[key];
+                                      currentMid[selectedLargeCategory] = largeMid;
+                                      const currentSmall = { ...(prices.clientPrices.category_small || {}) };
+                                      delete currentSmall[key];
+                                      updatePrices({
+                                        clientPrices: {
+                                          category_mid: currentMid,
+                                          category_small: currentSmall,
+                                        },
+                                      });
+                                      if (selectedMidCategory === key) {
+                                        setSelectedMidCategory(null);
+                                      }
+                                      setSaved(false);
+                                    }}
+                                    className="text-xs text-red-600 hover:text-red-800 shrink-0"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                                <input
+                                  type="number"
+                                  value={category.price}
+                                  onChange={(e) => {
+                                    const currentMid = { ...(prices.clientPrices.category_mid || {}) };
+                                    const largeMid = { ...(currentMid[selectedLargeCategory] || {}) };
+                                    if (largeMid[key]) {
+                                      largeMid[key] = {
+                                        ...largeMid[key],
+                                        price: Number(e.target.value),
+                                      };
+                                      currentMid[selectedLargeCategory] = largeMid;
+                                      updatePrices({
+                                        clientPrices: {
+                                          category_mid: currentMid,
+                                        },
+                                      });
+                                      setSaved(false);
+                                    }
+                                    e.stopPropagation();
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  placeholder="추가 가격"
+                                />
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-2 text-xs text-gray-500 text-center">중 카테고리 없음</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 오른쪽: 소 카테고리 */}
+                      <div className="w-1/3 bg-white flex flex-col">
+                        <div className="p-2 border-b border-gray-200 bg-gray-50">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-semibold text-gray-900">소</h4>
+                            {selectedMidCategory && (
+                              <button
+                                onClick={() => {
+                                  const name = window.prompt('소 카테고리 이름을 입력하세요');
+                                  if (!name || !name.trim()) return;
+                                  const currentSmall = prices.clientPrices.category_small || {};
+                                  const midCategory = currentSmall[selectedMidCategory] || {};
+                                  updatePrices({
+                                    clientPrices: {
+                                      category_small: {
+                                        ...currentSmall,
+                                        [selectedMidCategory]: {
+                                          ...midCategory,
+                                          [name.trim()]: 0,
+                                        },
+                                      },
+                                    },
+                                  });
+                                  setSaved(false);
+                                }}
+                                className="px-1.5 py-0.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                              >
+                                +
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto">
+                          {!selectedMidCategory ? (
+                            <div className="p-2 text-xs text-gray-500 text-center">중 카테고리 선택</div>
+                          ) : (
+                            <div className="p-2 space-y-1.5">
+                              {prices.clientPrices.category_small?.[selectedMidCategory] && Object.keys(prices.clientPrices.category_small[selectedMidCategory]).length > 0 ? (
+                                Object.entries(prices.clientPrices.category_small[selectedMidCategory]).map(([smallName, smallPrice]) => (
+                                  <div key={smallName} className="bg-white border border-gray-200 rounded p-1.5">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <div className="font-medium text-xs text-gray-900 truncate">{smallName}</div>
+                                      <button
+                                        onClick={() => {
+                                          if (!window.confirm(`"${smallName}" 소 카테고리를 삭제하시겠습니까?`)) return;
+                                          const currentSmall = { ...(prices.clientPrices.category_small || {}) };
+                                          const midCategory = { ...(currentSmall[selectedMidCategory] || {}) };
+                                          delete midCategory[smallName];
+                                          currentSmall[selectedMidCategory] = midCategory;
+                                          updatePrices({
+                                            clientPrices: {
+                                              category_small: currentSmall,
+                                            },
+                                          });
+                                          setSaved(false);
+                                        }}
+                                        className="text-xs text-red-600 hover:text-red-800 shrink-0"
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                    <input
+                                      type="number"
+                                      value={smallPrice}
+                                      onChange={(e) => {
+                                        const currentSmall = { ...(prices.clientPrices.category_small || {}) };
+                                        const midCategory = { ...(currentSmall[selectedMidCategory] || {}) };
+                                        midCategory[smallName] = Number(e.target.value);
+                                        currentSmall[selectedMidCategory] = midCategory;
+                                        updatePrices({
+                                          clientPrices: {
+                                            category_small: currentSmall,
+                                          },
+                                        });
+                                        setSaved(false);
+                                      }}
+                                      className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                      placeholder="가격"
+                                    />
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="text-xs text-gray-500 text-center py-4">소 카테고리 없음</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              {/* 공통 가격 설정 요약 */}
+              <div className="bg-gray-50 rounded border border-gray-200 py-1.5 px-1.5 mt-2">
+                <h3 className="text-xs font-semibold text-gray-800 mb-1">공통 가격 설정 요약</h3>
+                <div className="space-y-0.5 text-xs">
+                  <div className="text-gray-900">
+                    <span className="text-gray-600">2️⃣ 전문분야:</span> 마케팅 ₩{prices.marketing} | 법률 ₩{prices.law} | 기술/IT ₩{prices.tech} | 학술 ₩{prices.academic} | 의료 ₩{prices.medical} | 금융 ₩{prices.finance}
+                  </div>
+                  <div className="text-gray-900">
+                    <span className="text-gray-600">3️⃣ 긴급도:</span> 긴급1 {prices.urgent1}% | 긴급2 {prices.urgent2}%
+                  </div>
+                  <div className="text-gray-900">
+                    <span className="text-gray-600">4️⃣ 매칭:</span> 직접찾기 {prices.match_direct} | 매칭요청 {prices.match_request} | 자동매칭 {prices.match_auto} | 기업 {prices.match_corporate}
+                  </div>
+                  <div className="text-gray-900">
+                    <span className="text-gray-600">5️⃣ 결제분류:</span> 포인트 ₩{prices.payment_point_per_char}/글자 | 구독 ₩{prices.payment_subscribe_per_char}/글자 | 1회결제 ₩{prices.payment_oneoff_per_char}/글자
+                  </div>
+                  <div className="text-gray-900">
+                    <span className="text-gray-600">6️⃣ 결제내용:</span> 포인트충전 ₩{prices.payment_point_charge} | 베이직 ₩{prices.payment_basic_sub} | 스탠다드 ₩{prices.payment_standard_sub} | 프리미엄 ₩{prices.payment_premium_sub} | 서비스이용 ₩{prices.payment_service_use}
+                  </div>
+                  <div className="pt-1 mt-1 border-t border-gray-300">
+                    <span className="text-gray-600 font-semibold">전체 가격 산정:</span>
+                    <span className="text-gray-900 font-bold ml-1">
+                      전문분야 합계 ₩{prices.marketing + prices.law + prices.tech + prices.academic + prices.medical + prices.finance} | 
+                      긴급도 할증 {prices.urgent1}% / {prices.urgent2}% | 
+                      매칭 합계 {prices.match_direct + prices.match_request + prices.match_auto + prices.match_corporate} | 
+                      결제분류 합계 ₩{prices.payment_point_per_char + prices.payment_subscribe_per_char + prices.payment_oneoff_per_char}/글자 | 
+                      결제내용 합계 ₩{prices.payment_point_charge + prices.payment_basic_sub + prices.payment_standard_sub + prices.payment_premium_sub + prices.payment_service_use}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 수업료, 통독, 전시회 박스 */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                {/* 수업료 블록 */}
+                <div className="bg-white rounded-lg border border-gray-200 p-3">
+                <h2 className="text-base font-bold text-gray-900 mb-2 pb-2 border-b">
                   수업료 설정 (₩)
                 </h2>
-                <p className="text-sm text-gray-600 mb-6">
-                  과정별 단가를 입력하세요.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
                   {TUITION_ITEMS.map(({ key, label }) => (
                     <div key={key}>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
                         {label}
                       </label>
                       <input
@@ -599,58 +1073,55 @@ export default function AdminPricingPage() {
                         min={0}
                         value={prices.tuitionPrices?.[key] ?? 0}
                         onChange={(e) => handleChangeTuition(key, Number(e.target.value) || 0)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"
                         placeholder="0"
                       />
                     </div>
                   ))}
                 </div>
-              </div>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={handleSave}
-                  className="px-8 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
-                >
-                  💾 가격 저장
-                </button>
-                {saved && (
-                  <div className="text-green-600 font-semibold flex items-center gap-2">
-                    ✅ 저장되었습니다
+                {/* 수업료 가격 미리보기 */}
+                <div className="mt-3 pt-3 border-t border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50 rounded border border-purple-200 p-2">
+                  <h3 className="text-xs font-bold text-gray-900 mb-1.5">📊 현재 가격표 미리보기</h3>
+                  <div className="space-y-1 text-xs">
+                    <div className="text-gray-700">
+                      <span className="font-semibold">수업료 가격:</span> 테솔 ₩{prices.tuitionPrices?.tuition_tesol || 0} | 프롬프트 ₩{prices.tuitionPrices?.tuition_prompt || 0} | AI통번역 ₩{prices.tuitionPrices?.tuition_ai_translation || 0} | ITT시험 ₩{prices.tuitionPrices?.tuition_itt_exam || 0} | 윤리 ₩{prices.tuitionPrices?.tuition_ethics || 0}
+                    </div>
+                    <div className="text-gray-700">
+                      <span className="font-semibold">공통 적용 가격:</span> 전문분야 합계 ₩{prices.marketing + prices.law + prices.tech + prices.academic + prices.medical + prices.finance} | 긴급도 {prices.urgent1}%/{prices.urgent2}% | 매칭 합계 {prices.match_direct + prices.match_request + prices.match_auto + prices.match_corporate} | 결제분류 합계 ₩{prices.payment_point_per_char + prices.payment_subscribe_per_char + prices.payment_oneoff_per_char} | 결제내용 합계 ₩{prices.payment_point_charge + prices.payment_basic_sub + prices.payment_standard_sub + prices.payment_premium_sub + prices.payment_service_use}
+                    </div>
+                    <div className="text-purple-700 font-bold">
+                      <span>최종 가격:</span> 수업료 합계 ₩{(prices.tuitionPrices?.tuition_tesol || 0) + (prices.tuitionPrices?.tuition_prompt || 0) + (prices.tuitionPrices?.tuition_ai_translation || 0) + (prices.tuitionPrices?.tuition_itt_exam || 0) + (prices.tuitionPrices?.tuition_ethics || 0)} + 공통 적용 합계 ₩{(prices.marketing + prices.law + prices.tech + prices.academic + prices.medical + prices.finance) + (prices.match_direct + prices.match_request + prices.match_auto + prices.match_corporate) + (prices.payment_point_per_char + prices.payment_subscribe_per_char + prices.payment_oneoff_per_char) + (prices.payment_point_charge + prices.payment_basic_sub + prices.payment_standard_sub + prices.payment_premium_sub + prices.payment_service_use)} = ₩{((prices.tuitionPrices?.tuition_tesol || 0) + (prices.tuitionPrices?.tuition_prompt || 0) + (prices.tuitionPrices?.tuition_ai_translation || 0) + (prices.tuitionPrices?.tuition_itt_exam || 0) + (prices.tuitionPrices?.tuition_ethics || 0)) + ((prices.marketing + prices.law + prices.tech + prices.academic + prices.medical + prices.finance) + (prices.match_direct + prices.match_request + prices.match_auto + prices.match_corporate) + (prices.payment_point_per_char + prices.payment_subscribe_per_char + prices.payment_oneoff_per_char) + (prices.payment_point_charge + prices.payment_basic_sub + prices.payment_standard_sub + prices.payment_premium_sub + prices.payment_service_use))}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
-            </>
-          ) : priceTableType === 'proofread' ? (
-            <div className="max-w-4xl space-y-6">
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
+
+              {/* 통독 블록 */}
+              <div className="bg-white rounded-lg border border-gray-200 p-3">
+                <h2 className="text-base font-bold text-gray-900 mb-2 pb-2 border-b">
                   통독 설정 (₩)
                 </h2>
-                <div className="flex flex-col md:flex-row gap-6 md:gap-8">
-                  {/* 1~3: 세로 나열 */}
-                  <div className="space-y-3 min-w-0 md:min-w-[16rem]">
-                    {PROOFREAD_ITEMS.filter(({ group }) => !group).map(({ key, label }) => (
-                      <div key={key} className="flex items-center justify-between gap-4 min-h-10 py-2.5">
-                        <label className="text-sm font-medium text-gray-700 shrink-0 w-32">
-                          {label}
-                        </label>
-                        <input
-                          type="number"
-                          min={0}
-                          value={prices.proofreadPrices?.[key] ?? 0}
-                          onChange={(e) => handleChangeProofread(key, Number(e.target.value) || 0)}
-                          className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-right"
-                          placeholder="0"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  {/* 4번: 문서판매 (오른쪽 여백) */}
-                  <div className="md:border-l md:border-gray-200 md:pl-8 flex-1 space-y-3">
-                    <div className="text-sm font-semibold text-gray-700 mb-2">4. 문서판매</div>
+                <div className="space-y-1.5">
+                  {PROOFREAD_ITEMS.filter(({ group }) => !group).map(({ key, label }) => (
+                    <div key={key} className="flex items-center justify-between gap-2">
+                      <label className="text-xs font-medium text-gray-700 shrink-0 w-24">
+                        {label}
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={prices.proofreadPrices?.[key] ?? 0}
+                        onChange={(e) => handleChangeProofread(key, Number(e.target.value) || 0)}
+                        className="w-20 px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 text-right"
+                        placeholder="0"
+                      />
+                    </div>
+                  ))}
+                  <div className="pt-1.5 mt-1.5 border-t border-gray-200">
+                    <div className="text-xs font-semibold text-gray-700 mb-1.5">4. 문서판매</div>
                     {PROOFREAD_ITEMS.filter(({ group }) => group).map(({ key, label }) => (
-                      <div key={key} className="flex items-center justify-between gap-4 min-h-10 py-2.5 pl-2">
-                        <label className="text-sm font-medium text-gray-700 shrink-0 w-40">
+                      <div key={key} className="flex items-center justify-between gap-2 mb-1.5">
+                        <label className="text-xs font-medium text-gray-700 shrink-0 w-28">
                           {label}
                         </label>
                         <input
@@ -658,78 +1129,78 @@ export default function AdminPricingPage() {
                           min={0}
                           value={prices.proofreadPrices?.[key] ?? 0}
                           onChange={(e) => handleChangeProofread(key, Number(e.target.value) || 0)}
-                          className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-right"
+                          className="w-20 px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 text-right"
                           placeholder="0"
                         />
                       </div>
                     ))}
                   </div>
                 </div>
-              </div>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={handleSave}
-                  className="px-8 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
-                >
-                  💾 가격 저장
-                </button>
-                {saved && (
-                  <div className="text-green-600 font-semibold flex items-center gap-2">
-                    ✅ 저장되었습니다
+                {/* 통독 가격 미리보기 */}
+                <div className="mt-3 pt-3 border-t border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50 rounded border border-purple-200 p-2">
+                  <h3 className="text-xs font-bold text-gray-900 mb-1.5">📊 현재 가격표 미리보기</h3>
+                  <div className="space-y-1 text-xs">
+                    <div className="text-gray-700">
+                      <span className="font-semibold">통독 가격:</span> 문서사용 ₩{prices.proofreadPrices?.proofread_doc_use || 0} | 문서제공 ₩{prices.proofreadPrices?.proofread_doc_provide || 0} | 전문가 의뢰비 ₩{prices.proofreadPrices?.proofread_expert_request || 0} | 일반 문서 판매 ₩{prices.proofreadPrices?.proofread_doc_sale_general || 0} | 전문가 문서 판매 ₩{prices.proofreadPrices?.proofread_doc_sale_expert || 0}
+                    </div>
+                    <div className="text-gray-700">
+                      <span className="font-semibold">공통 적용 가격:</span> 전문분야 합계 ₩{prices.marketing + prices.law + prices.tech + prices.academic + prices.medical + prices.finance} | 긴급도 {prices.urgent1}%/{prices.urgent2}% | 매칭 합계 {prices.match_direct + prices.match_request + prices.match_auto + prices.match_corporate} | 결제분류 합계 ₩{prices.payment_point_per_char + prices.payment_subscribe_per_char + prices.payment_oneoff_per_char} | 결제내용 합계 ₩{prices.payment_point_charge + prices.payment_basic_sub + prices.payment_standard_sub + prices.payment_premium_sub + prices.payment_service_use}
+                    </div>
+                    <div className="text-purple-700 font-bold">
+                      <span>최종 가격:</span> 통독 합계 ₩{(prices.proofreadPrices?.proofread_doc_use || 0) + (prices.proofreadPrices?.proofread_doc_provide || 0) + (prices.proofreadPrices?.proofread_expert_request || 0) + (prices.proofreadPrices?.proofread_doc_sale_general || 0) + (prices.proofreadPrices?.proofread_doc_sale_expert || 0)} + 공통 적용 합계 ₩{(prices.marketing + prices.law + prices.tech + prices.academic + prices.medical + prices.finance) + (prices.match_direct + prices.match_request + prices.match_auto + prices.match_corporate) + (prices.payment_point_per_char + prices.payment_subscribe_per_char + prices.payment_oneoff_per_char) + (prices.payment_point_charge + prices.payment_basic_sub + prices.payment_standard_sub + prices.payment_premium_sub + prices.payment_service_use)} = ₩{((prices.proofreadPrices?.proofread_doc_use || 0) + (prices.proofreadPrices?.proofread_doc_provide || 0) + (prices.proofreadPrices?.proofread_expert_request || 0) + (prices.proofreadPrices?.proofread_doc_sale_general || 0) + (prices.proofreadPrices?.proofread_doc_sale_expert || 0)) + ((prices.marketing + prices.law + prices.tech + prices.academic + prices.medical + prices.finance) + (prices.match_direct + prices.match_request + prices.match_auto + prices.match_corporate) + (prices.payment_point_per_char + prices.payment_subscribe_per_char + prices.payment_oneoff_per_char) + (prices.payment_point_charge + prices.payment_basic_sub + prices.payment_standard_sub + prices.payment_premium_sub + prices.payment_service_use))}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
-          ) : priceTableType === 'exhibition' ? (
-            <div className="max-w-4xl space-y-6">
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b">
+
+              {/* 전시회 블록 */}
+              <div className="bg-white rounded-lg border border-gray-200 p-3">
+                <h2 className="text-base font-bold text-gray-900 mb-2 pb-2 border-b">
                   전시회 설정 (₩)
                 </h2>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+                <div className="grid grid-cols-2 gap-2 mb-3">
                   {EXHIBITION_ITEMS.map(({ key, label }) => (
-                    <div key={key} className="flex flex-col gap-1.5 min-h-[4rem]">
-                      <label className="text-sm font-medium text-gray-700">{label}</label>
+                    <div key={key} className="flex flex-col gap-1">
+                      <label className="text-xs font-medium text-gray-700">{label}</label>
                       <input
                         type="number"
                         min={0}
                         value={prices.exhibitionPrices?.[key] ?? 0}
                         onChange={(e) => handleChangeExhibition(key, Number(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-right"
+                        className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 text-right"
                         placeholder="0"
                       />
                     </div>
                   ))}
                 </div>
 
-                <div className="pt-4 border-t border-gray-200">
-                  <div className="text-sm font-semibold text-gray-800 mb-3">6. 지역별 · 작품별</div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm font-medium text-gray-700">지역별</span>
+                <div className="pt-2 border-t border-gray-200">
+                  <div className="text-xs font-semibold text-gray-800 mb-2">6. 지역별 · 작품별</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-gray-50 rounded border border-gray-200 p-2">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-medium text-gray-700">지역별</span>
                         <button
                           type="button"
                           onClick={handleAddExhibitionRegion}
-                          className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                          className="px-2 py-0.5 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700"
                         >
                           + 추가
                         </button>
                       </div>
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
                         {Object.keys(prices.exhibitionRegions || {}).length === 0 ? (
-                          <div className="text-xs text-gray-500 py-4 text-center">지역을 추가하세요</div>
+                          <div className="text-xs text-gray-500 py-2 text-center">지역을 추가하세요</div>
                         ) : (
                           Object.entries(prices.exhibitionRegions || {}).map(([name, val]) => (
-                            <div key={name} className="flex items-center gap-2 min-h-9">
-                              <span className="text-sm text-gray-700 shrink-0 w-20 truncate" title={name}>{name}</span>
+                            <div key={name} className="flex items-center gap-1">
+                              <span className="text-xs text-gray-700 shrink-0 w-16 truncate" title={name}>{name}</span>
                               <input
                                 type="number"
                                 min={0}
                                 value={val}
                                 onChange={(e) => handleChangeExhibitionRegion(name, Number(e.target.value) || 0)}
-                                className="flex-1 min-w-0 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-right"
+                                className="flex-1 min-w-0 px-1.5 py-0.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 text-right"
                               />
                               <button
                                 type="button"
@@ -743,30 +1214,30 @@ export default function AdminPricingPage() {
                         )}
                       </div>
                     </div>
-                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm font-medium text-gray-700">작품별</span>
+                    <div className="bg-gray-50 rounded border border-gray-200 p-2">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-medium text-gray-700">작품별</span>
                         <button
                           type="button"
                           onClick={handleAddExhibitionWork}
-                          className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                          className="px-2 py-0.5 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700"
                         >
                           + 추가
                         </button>
                       </div>
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
                         {Object.keys(prices.exhibitionWorks || {}).length === 0 ? (
-                          <div className="text-xs text-gray-500 py-4 text-center">작품을 추가하세요</div>
+                          <div className="text-xs text-gray-500 py-2 text-center">작품을 추가하세요</div>
                         ) : (
                           Object.entries(prices.exhibitionWorks || {}).map(([name, val]) => (
-                            <div key={name} className="flex items-center gap-2 min-h-9">
-                              <span className="text-sm text-gray-700 shrink-0 w-20 truncate" title={name}>{name}</span>
+                            <div key={name} className="flex items-center gap-1">
+                              <span className="text-xs text-gray-700 shrink-0 w-16 truncate" title={name}>{name}</span>
                               <input
                                 type="number"
                                 min={0}
                                 value={val}
                                 onChange={(e) => handleChangeExhibitionWork(name, Number(e.target.value) || 0)}
-                                className="flex-1 min-w-0 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-right"
+                                className="flex-1 min-w-0 px-1.5 py-0.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 text-right"
                               />
                               <button
                                 type="button"
@@ -782,16 +1253,32 @@ export default function AdminPricingPage() {
                     </div>
                   </div>
                 </div>
+                {/* 전시회 가격 미리보기 */}
+                <div className="mt-3 pt-3 border-t border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50 rounded border border-purple-200 p-2">
+                  <h3 className="text-xs font-bold text-gray-900 mb-1.5">📊 현재 가격표 미리보기</h3>
+                  <div className="space-y-1 text-xs">
+                    <div className="text-gray-700">
+                      <span className="font-semibold">전시회 가격:</span> 사용료 ₩{prices.exhibitionPrices?.exhibition_usage || 0} | 영상 ₩{prices.exhibitionPrices?.exhibition_video || 0} | 음성 ₩{prices.exhibitionPrices?.exhibition_voice || 0} | 텍스트 ₩{prices.exhibitionPrices?.exhibition_text || 0} | 다운 ₩{prices.exhibitionPrices?.exhibition_down || 0}
+                    </div>
+                    <div className="text-gray-700">
+                      <span className="font-semibold">공통 적용 가격:</span> 전문분야 합계 ₩{prices.marketing + prices.law + prices.tech + prices.academic + prices.medical + prices.finance} | 긴급도 {prices.urgent1}%/{prices.urgent2}% | 매칭 합계 {prices.match_direct + prices.match_request + prices.match_auto + prices.match_corporate} | 결제분류 합계 ₩{prices.payment_point_per_char + prices.payment_subscribe_per_char + prices.payment_oneoff_per_char} | 결제내용 합계 ₩{prices.payment_point_charge + prices.payment_basic_sub + prices.payment_standard_sub + prices.payment_premium_sub + prices.payment_service_use}
+                    </div>
+                    <div className="text-purple-700 font-bold">
+                      <span>최종 가격:</span> 전시회 합계 ₩{(prices.exhibitionPrices?.exhibition_usage || 0) + (prices.exhibitionPrices?.exhibition_video || 0) + (prices.exhibitionPrices?.exhibition_voice || 0) + (prices.exhibitionPrices?.exhibition_text || 0) + (prices.exhibitionPrices?.exhibition_down || 0)} + 공통 적용 합계 ₩{(prices.marketing + prices.law + prices.tech + prices.academic + prices.medical + prices.finance) + (prices.match_direct + prices.match_request + prices.match_auto + prices.match_corporate) + (prices.payment_point_per_char + prices.payment_subscribe_per_char + prices.payment_oneoff_per_char) + (prices.payment_point_charge + prices.payment_basic_sub + prices.payment_standard_sub + prices.payment_premium_sub + prices.payment_service_use)} = ₩{((prices.exhibitionPrices?.exhibition_usage || 0) + (prices.exhibitionPrices?.exhibition_video || 0) + (prices.exhibitionPrices?.exhibition_voice || 0) + (prices.exhibitionPrices?.exhibition_text || 0) + (prices.exhibitionPrices?.exhibition_down || 0)) + ((prices.marketing + prices.law + prices.tech + prices.academic + prices.medical + prices.finance) + (prices.match_direct + prices.match_request + prices.match_auto + prices.match_corporate) + (prices.payment_point_per_char + prices.payment_subscribe_per_char + prices.payment_oneoff_per_char) + (prices.payment_point_charge + prices.payment_basic_sub + prices.payment_standard_sub + prices.payment_premium_sub + prices.payment_service_use))}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="flex gap-3 justify-end">
+              </div>
+              <div className="flex gap-2 justify-end mt-3">
                 <button
                   onClick={handleSave}
-                  className="px-8 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                  className="px-4 py-2 bg-purple-600 text-white rounded text-sm font-semibold hover:bg-purple-700 transition-colors"
                 >
                   💾 가격 저장
                 </button>
                 {saved && (
-                  <div className="text-green-600 font-semibold flex items-center gap-2">
+                  <div className="text-green-600 font-semibold text-sm flex items-center gap-1">
                     ✅ 저장되었습니다
                   </div>
                 )}
@@ -1983,7 +2470,7 @@ export default function AdminPricingPage() {
         </div>
 
         {/* 미리보기 */}
-        {!isPlaceholderType && priceTableType !== 'editor' && priceTableType !== 'tuition' && priceTableType !== 'proofread' && priceTableType !== 'exhibition' && priceTableType !== 'expert-review' && (
+        {!isPlaceholderType && priceTableType !== 'editor' && priceTableType !== 'tuition-proofread-exhibition' && priceTableType !== 'expert-review' && (
         <div className="mt-12 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200 p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">📊 현재 가격표 미리보기</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
