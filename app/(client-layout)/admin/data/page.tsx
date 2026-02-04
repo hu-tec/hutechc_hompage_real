@@ -129,7 +129,8 @@ const MARKETING_OPTIONS = {
   ],
 };
 
-// 대중소 분류 구조 (두 번째 이미지 기준)
+// 대중소 분류 구조 (두 번째 이미지 기준) - 향후 사용 예정
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const CATEGORY_STRUCTURE: Record<string, Record<string, string[]>> = {
   '공통 - 프롬, 번역': {
     '문서': ['일반', '전문', '분야'],

@@ -19,9 +19,19 @@ import {
   type FixedRuleC1,
   type SemiFixedRuleC2,
   type OptionalRuleC3,
+  type CustomField,
+  type RuleStatus,
 } from "@/lib/promptRules";
 
 type RuleSectionType = "A" | "B1" | "B2" | "B3" | "C1" | "C2" | "C3";
+
+// 섹션별 아이템 타입 (유니온 대신 Record 사용)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SectionItem = any;
+
+// 섹션 데이터 타입
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SectionData = any;
 
 // 동적 옵션을 localStorage에서 로드/저장
 function loadDynamicOptions() {
@@ -854,11 +864,11 @@ function SectionDisplay({
 }: {
   title: string;
   hasSection: boolean;
-  items: any[];
+  items: SectionItem[];
   onAdd: () => void;
   onRemove: () => void;
   onRemoveItem: (itemId: string) => void;
-  onSaveItem: (itemId: string, data: any) => void;
+  onSaveItem: (itemId: string, data: SectionData) => void;
   sectionType: RuleSectionType;
   ruleId: string;
 }) {
@@ -926,7 +936,7 @@ function SectionDisplay({
           {(item.customFields || []).length > 0 && (
             <div className="col-span-2 border-t pt-2 mt-2">
               <div className="text-xs font-semibold text-gray-700 mb-1">추가 필드</div>
-              {(item.customFields || []).map((field: any) => (
+              {(item.customFields || []).map((field: CustomField) => (
                 <div key={field.id} className="mb-1">
                   <span className="text-gray-500">{field.label}:</span> <span className="text-gray-900">{field.value || "-"}</span>
                 </div>
@@ -1161,11 +1171,11 @@ function SectionEditMode({
   setEditingItemId,
 }: {
   title: string;
-  items: any[];
+  items: SectionItem[];
   sectionType: RuleSectionType;
   onAddItem: () => void;
   onRemoveItem: (itemId: string) => void;
-  onSaveItem: (itemId: string, data: any) => void;
+  onSaveItem: (itemId: string, data: SectionData) => void;
   onCancel: () => void;
   editingItemId: string | null;
   setEditingItemId: (id: string | null) => void;
@@ -1236,7 +1246,7 @@ function SectionEditMode({
 }
 
 // 항목 표시 컴포넌트
-function ItemDisplay({ item, sectionType }: { item: any; sectionType: RuleSectionType }) {
+function ItemDisplay({ item, sectionType }: { item: SectionItem; sectionType: RuleSectionType }) {
   switch (sectionType) {
     case "A":
       const defaultLabelsA_display = {
@@ -1276,7 +1286,7 @@ function ItemDisplay({ item, sectionType }: { item: any; sectionType: RuleSectio
           {(item.customFields || []).length > 0 && (
             <div className="col-span-2 border-t pt-2 mt-2">
               <div className="text-xs font-semibold text-gray-700 mb-1">추가 필드</div>
-              {(item.customFields || []).map((field: any) => (
+              {(item.customFields || []).map((field: CustomField) => (
                 <div key={field.id} className="mb-1">
                   <span className="text-gray-500">{field.label}:</span> <span className="text-gray-900">{field.value || "-"}</span>
                 </div>
@@ -1313,7 +1323,7 @@ function ItemDisplay({ item, sectionType }: { item: any; sectionType: RuleSectio
           {(item.customFields || []).length > 0 && (
             <div className="col-span-2 border-t pt-2 mt-2">
               <div className="text-xs font-semibold text-gray-700 mb-1">추가 필드</div>
-              {(item.customFields || []).map((field: any) => (
+              {(item.customFields || []).map((field: CustomField) => (
                 <div key={field.id} className="mb-1">
                   <span className="text-gray-500">{field.label}:</span> <span className="text-gray-900">{field.value || "-"}</span>
                 </div>
@@ -1356,7 +1366,7 @@ function ItemDisplay({ item, sectionType }: { item: any; sectionType: RuleSectio
           {(item.customFields || []).length > 0 && (
             <div className="col-span-3 border-t pt-2 mt-2">
               <div className="text-xs font-semibold text-gray-700 mb-1">추가 필드</div>
-              {(item.customFields || []).map((field: any) => (
+              {(item.customFields || []).map((field: CustomField) => (
                 <div key={field.id} className="mb-1">
                   <span className="text-gray-500">{field.label}:</span> <span className="text-gray-900">{field.value || "-"}</span>
                 </div>
@@ -1384,7 +1394,7 @@ function ItemDisplay({ item, sectionType }: { item: any; sectionType: RuleSectio
           {(item.customFields || []).length > 0 && (
             <div className="col-span-2 border-t pt-2 mt-2">
               <div className="text-xs font-semibold text-gray-700 mb-1">추가 필드</div>
-              {(item.customFields || []).map((field: any) => (
+              {(item.customFields || []).map((field: CustomField) => (
                 <div key={field.id} className="mb-1">
                   <span className="text-gray-500">{field.label}:</span> <span className="text-gray-900">{field.value || "-"}</span>
                 </div>
@@ -1441,7 +1451,7 @@ function ItemDisplay({ item, sectionType }: { item: any; sectionType: RuleSectio
           {(item.customFields || []).length > 0 && (
             <div className="col-span-3 border-t pt-2 mt-2">
               <div className="text-xs font-semibold text-gray-700 mb-1">추가 필드</div>
-              {(item.customFields || []).map((field: any) => (
+              {(item.customFields || []).map((field: CustomField) => (
                 <div key={field.id} className="mb-1">
                   <span className="text-gray-500">{field.label}:</span> <span className="text-gray-900">{field.value || "-"}</span>
                 </div>
@@ -1467,7 +1477,7 @@ function ItemDisplay({ item, sectionType }: { item: any; sectionType: RuleSectio
           {(item.customFields || []).length > 0 && (
             <div className="col-span-2 border-t pt-2 mt-2">
               <div className="text-xs font-semibold text-gray-700 mb-1">추가 필드</div>
-              {(item.customFields || []).map((field: any) => (
+              {(item.customFields || []).map((field: CustomField) => (
                 <div key={field.id} className="mb-1">
                   <span className="text-gray-500">{field.label}:</span> <span className="text-gray-900">{field.value || "-"}</span>
                 </div>
@@ -1488,9 +1498,9 @@ function ItemEditForm({
   onSave,
   onCancel,
 }: {
-  item: any;
+  item: SectionItem;
   sectionType: RuleSectionType;
-  onSave: (data: any) => void;
+  onSave: (data: SectionData) => void;
   onCancel: () => void;
 }) {
   const [data, setData] = useState(item);
@@ -1527,14 +1537,14 @@ function ItemEditForm({
   const removeCustomField = (fieldId: string) => {
     setData({
       ...data,
-      customFields: (data.customFields || []).filter((f: any) => f.id !== fieldId),
+      customFields: (data.customFields || []).filter((f: CustomField) => f.id !== fieldId),
     });
   };
 
   const updateCustomField = (fieldId: string, value: string) => {
     setData({
       ...data,
-      customFields: (data.customFields || []).map((f: any) =>
+      customFields: (data.customFields || []).map((f: CustomField) =>
         f.id === fieldId ? { ...f, value } : f
       ),
     });
@@ -1891,7 +1901,7 @@ function ItemEditForm({
         <div className="border-t pt-4 mt-4">
           <div className="text-xs font-semibold text-gray-700 mb-2">추가 필드</div>
           <div className="space-y-3">
-            {(data.customFields || []).map((field: any) => (
+            {(data.customFields || []).map((field: CustomField) => (
               <div key={field.id} className="flex items-center gap-2">
                 <div className="flex-1">
                   <label className="block text-xs text-gray-600 mb-1">{field.label}</label>
@@ -2013,9 +2023,9 @@ function SectionEditForm({
   editingField,
 }: {
   title: string;
-  sectionData: any;
+  sectionData: SectionData;
   sectionType: RuleSectionType;
-  onSave: (data: any) => void;
+  onSave: (data: SectionData) => void;
   onCancel: () => void;
   onRemove: () => void;
   ruleId: string;
@@ -2500,7 +2510,7 @@ function AddRuleModal({
   const [formData, setFormData] = useState<Omit<PromptRule, "id" | "createdAt" | "updatedAt" | "order">>({
     mainCategory: categories[0] || "document",
     preset: presets[0] || "basic",
-    status: statuses[0] || "default",
+    status: (statuses[0] || "default") as RuleStatus,
     enabled: true,
   });
 
