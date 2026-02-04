@@ -1414,7 +1414,7 @@ function ItemDisplay({ item, sectionType }: { item: SectionItem; sectionType: Ru
             {item.reviewNotation && <span className="text-green-600">검수 표기 기본</span>}
           </div>
           {/* 동적 필드 표시 */}
-          {(item.customFields || []).map((field: any) => (
+          {(item.customFields || []).map((field: CustomField) => (
             <div key={field.id} className="col-span-2">
               <span className="text-gray-500">{field.label}:</span> <span className="text-gray-900">{field.value || "-"}</span>
             </div>
