@@ -150,7 +150,7 @@ export interface PromptRule {
     id: string;
     title: string;
     type: string;
-    items: any[];
+    items: CustomField[];
   }[];
   
   createdAt: string;
