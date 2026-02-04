@@ -954,6 +954,8 @@ export default function AdminPricingPage() {
                                   const midCategory = currentSmall[selectedMidCategory] || {};
                                   updatePrices({
                                     clientPrices: {
+                                      category_large: prices.clientPrices.category_large || {},
+                                      category_mid: prices.clientPrices.category_mid || {},
                                       category_small: {
                                         ...currentSmall,
                                         [selectedMidCategory]: {
