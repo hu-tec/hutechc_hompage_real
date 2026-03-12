@@ -23,7 +23,9 @@ const MOCK_PAGES: PageConfig[] = [
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('common');
   const [isEditingCommon, setIsEditingCommon] = useState(false);
-  const [activeCommonTool, setActiveCommonTool] = useState<'none' | 'category'>('none');
+  const [activeCommonTool, setActiveCommonTool] = useState<'none' | 'category' | 'checkbox'>('none');
+  const [categoryTitle, setCategoryTitle] = useState<string>('카테고리 트리 설정 (대/중/소)');
+  const [checkboxTitle, setCheckboxTitle] = useState<string>('체크박스 설정');
   const [pageQuery, setPageQuery] = useState('');
 
   // 공통 데이터 설정에서 사용할 카테고리 트리 (대/중/소)
@@ -33,6 +35,17 @@ export default function AdminSettingsPage() {
 
   // 공통 데이터 설정 - "추가하기" 플로우용 모달 상태
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  type CheckboxItem = {
+    id: string;
+    label: string;
+    defaultChecked: boolean;
+  };
+  const [checkboxItems, setCheckboxItems] = useState<CheckboxItem[]>([]);
+
+  // 어떤 블록을 화면에 보여줄지 여부 (카테고리, 체크박스는 여러 번 추가하는 대신 각 1세트씩 켜고 끄는 구조)
+  const [showCategoryBlock, setShowCategoryBlock] = useState(false);
+  const [showCheckboxBlock, setShowCheckboxBlock] = useState(false);
 
   const filteredPages = useMemo(() => {
     const q = pageQuery.trim().toLowerCase();
@@ -52,6 +65,10 @@ export default function AdminSettingsPage() {
       : [];
 
   const handleAddLargeCategory = () => {
+    if (!isEditingCommon) {
+      window.alert('카테고리를 추가하려면 먼저 "수정하기"를 눌러 편집 모드로 전환하세요.');
+      return;
+    }
     const name = window.prompt('대 카테고리 이름을 입력하세요');
     if (!name?.trim()) return;
     const key = name.trim();
@@ -64,6 +81,10 @@ export default function AdminSettingsPage() {
   };
 
   const handleAddMidCategory = () => {
+    if (!isEditingCommon) {
+      window.alert('카테고리를 추가하려면 먼저 "수정하기"를 눌러 편집 모드로 전환하세요.');
+      return;
+    }
     if (!selectedLargeCategory) {
       alert('먼저 대 카테고리를 선택하세요.');
       return;
@@ -73,7 +94,6 @@ export default function AdminSettingsPage() {
     const key = name.trim();
     setCategoryTree((prev) => {
       const large = prev[selectedLargeCategory] ?? {};
-      if (large[key]) return prev;
       return {
         ...prev,
         [selectedLargeCategory]: {
@@ -86,6 +106,10 @@ export default function AdminSettingsPage() {
   };
 
   const handleAddSmallCategory = () => {
+    if (!isEditingCommon) {
+      window.alert('카테고리를 추가하려면 먼저 "수정하기"를 눌러 편집 모드로 전환하세요.');
+      return;
+    }
     if (!selectedLargeCategory || !selectedMidCategory) {
       alert('먼저 대/중 카테고리를 선택하세요.');
       return;
@@ -97,13 +121,45 @@ export default function AdminSettingsPage() {
       const large = prev[selectedLargeCategory] ?? {};
       const mids = { ...large };
       const smalls = mids[selectedMidCategory] ?? [];
-      if (smalls.includes(value)) return prev;
       mids[selectedMidCategory] = [...smalls, value];
       return {
         ...prev,
         [selectedLargeCategory]: mids,
       };
     });
+  };
+
+  const hasAnyCategory =
+    Object.keys(categoryTree).length > 0 ||
+    Object.values(categoryTree).some((mids) => Object.keys(mids).length > 0);
+  const hasAnyCheckbox = checkboxItems.length > 0;
+
+  const handleSaveCommon = () => {
+    // 처음 누를 때는 "수정하기" → 편집 모드 진입
+    if (!isEditingCommon) {
+      setIsEditingCommon(true);
+      return;
+    }
+
+    // 편집 모드에서 다시 누르면 "저장하기" 동작
+    if (activeCommonTool === 'category') {
+      if (!hasAnyCategory) {
+        window.alert('저장할 카테고리가 없습니다. 대/중/소 카테고리를 먼저 추가해주세요.');
+        return;
+      }
+
+      // TODO: 이후 실제 저장/서버 연동 시 이 부분에서 처리
+      window.alert('공통 카테고리 설정이 저장되었습니다. (현재는 화면에만 유지됩니다)');
+    } else if (activeCommonTool === 'checkbox') {
+      if (!hasAnyCheckbox) {
+        window.alert('저장할 체크박스 항목이 없습니다. 항목을 먼저 추가해주세요.');
+        return;
+      }
+      window.alert('체크박스 설정이 저장되었습니다. (현재는 화면에만 유지됩니다)');
+    }
+
+    // 저장 후에는 수정모드에서 나가되, 설정 값은 그대로 유지
+    setIsEditingCommon(false);
   };
 
   return (
@@ -155,19 +211,13 @@ export default function AdminSettingsPage() {
                     <button
                       type="button"
                       className="text-xs px-3 py-1.5 rounded-md bg-indigo-600 text-white font-semibold hover:bg-indigo-700"
-                      onClick={() => {
-                        if (isEditingCommon) {
-                          // TODO: 저장 로직 연결 예정
-                          alert('공통 데이터 설정이 (mock) 저장되었습니다.');
-                        }
-                        setIsEditingCommon((prev) => !prev);
-                      }}
+                      onClick={handleSaveCommon}
                     >
                       {isEditingCommon ? '저장하기' : '수정하기'}
                     </button>
                   </div>
 
-                  {!(isEditingCommon && activeCommonTool !== 'none') && (
+                  {!((isEditingCommon || hasAnyCategory || hasAnyCheckbox) && (showCategoryBlock || showCheckboxBlock)) && (
                     <div className="border border-dashed border-gray-200 rounded-lg bg-gray-50 px-6 py-14 text-center">
                       <div className="text-sm font-semibold text-gray-700 mb-1">
                         {isEditingCommon ? '공통 데이터 설정 편집 모드' : '내용 없음'}
@@ -180,15 +230,43 @@ export default function AdminSettingsPage() {
                     </div>
                   )}
 
-                  {isEditingCommon && activeCommonTool === 'category' && (
+                  {showCategoryBlock && (isEditingCommon || hasAnyCategory) && (
                     <div className="mt-6 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-sm font-semibold text-gray-900">카테고리 트리 설정 (대/중/소)</h3>
-                          <p className="text-xs text-gray-600 mt-1">
-                            대 카테고리를 먼저 추가하고, 각 대 카테고리 안에 중·소 카테고리를 계층적으로 추가하세요.
-                          </p>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 max-w-xs">
+                          {isEditingCommon ? (
+                            <input
+                              className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm font-semibold text-gray-900 bg-white"
+                              value={categoryTitle}
+                              onChange={(e) => setCategoryTitle(e.target.value)}
+                              placeholder="카테고리 설정 이름을 입력하세요"
+                            />
+                          ) : (
+                            <h3 className="text-sm font-semibold text-gray-900">
+                              {categoryTitle || '카테고리 트리 설정 (대/중/소)'}
+                            </h3>
+                          )}
                         </div>
+                        {isEditingCommon && (
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-gray-600 mt-1">
+                              대 카테고리를 먼저 추가하고, 각 대 카테고리 안에 중·소 카테고리를 계층적으로 추가하세요.
+                            </p>
+                            <button
+                              type="button"
+                              className="px-3 py-1.5 text-xs rounded-md border border-red-200 text-red-700 hover:bg-red-50"
+                              onClick={() => {
+                                if (!window.confirm('현재 카테고리 설정 전체를 삭제하시겠습니까?')) return;
+                                setCategoryTree({});
+                                setSelectedLargeCategory(null);
+                                setSelectedMidCategory(null);
+                                setShowCategoryBlock(false);
+                              }}
+                            >
+                              전체 삭제
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -196,13 +274,15 @@ export default function AdminSettingsPage() {
                         <div className="border border-gray-200 rounded-md bg-gray-50">
                           <div className="flex items-center justify-between mb-2 px-3 py-2 bg-indigo-50 rounded-t-md border-b border-indigo-100">
                             <h4 className="text-sm font-semibold text-gray-900">대 카테고리</h4>
-                            <button
-                              type="button"
-                              className="text-[11px] px-2 py-0.5 rounded-md border border-indigo-200 text-indigo-700 hover:bg-indigo-100"
-                              onClick={handleAddLargeCategory}
-                            >
-                              + 추가
-                            </button>
+                            {isEditingCommon && (
+                              <button
+                                type="button"
+                                className="text-[11px] px-2 py-0.5 rounded-md border border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+                                onClick={handleAddLargeCategory}
+                              >
+                                + 추가
+                              </button>
+                            )}
                           </div>
                           <div className="p-3 space-y-1 max-h-64 overflow-y-auto">
                             {largeCategories.length === 0 ? (
@@ -238,13 +318,15 @@ export default function AdminSettingsPage() {
                         <div className="border border-gray-200 rounded-md bg-gray-50">
                           <div className="flex items-center justify-between mb-2 px-3 py-2 bg-indigo-50 rounded-t-md border-b border-indigo-100">
                             <h4 className="text-sm font-semibold text-gray-900">중 카테고리</h4>
-                            <button
-                              type="button"
-                              className="text-[11px] px-2 py-0.5 rounded-md border border-indigo-200 text-indigo-700 hover:bg-indigo-100"
-                              onClick={handleAddMidCategory}
-                            >
-                              + 추가
-                            </button>
+                            {isEditingCommon && (
+                              <button
+                                type="button"
+                                className="text-[11px] px-2 py-0.5 rounded-md border border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+                                onClick={handleAddMidCategory}
+                              >
+                                + 추가
+                              </button>
+                            )}
                           </div>
                           <div className="text-[11px] text-gray-500 mb-1 px-3 pt-2">
                             {selectedLargeCategory
@@ -282,13 +364,15 @@ export default function AdminSettingsPage() {
                         <div className="border border-gray-200 rounded-md bg-gray-50">
                           <div className="flex items-center justify-between mb-2 px-3 py-2 bg-indigo-50 rounded-t-md border-b border-indigo-100">
                             <h4 className="text-sm font-semibold text-gray-900">소 카테고리</h4>
-                            <button
-                              type="button"
-                              className="text-[11px] px-2 py-0.5 rounded-md border border-indigo-200 text-indigo-700 hover:bg-indigo-100"
-                              onClick={handleAddSmallCategory}
-                            >
-                              + 추가
-                            </button>
+                            {isEditingCommon && (
+                              <button
+                                type="button"
+                                className="text-[11px] px-2 py-0.5 rounded-md border border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+                                onClick={handleAddSmallCategory}
+                              >
+                                + 추가
+                              </button>
+                            )}
                           </div>
                           <div className="text-[11px] text-gray-500 mb-1 px-3 pt-2">
                             {selectedLargeCategory && selectedMidCategory
@@ -316,6 +400,123 @@ export default function AdminSettingsPage() {
 
                       <div className="mt-2 text-[11px] text-gray-500">
                         ※ 현재는 컴포넌트 로컬 상태로만 관리되며, 추후 공통 설정 스키마/저장소와 연결 예정입니다.
+                      </div>
+                    </div>
+                  )}
+
+                  {showCheckboxBlock && (isEditingCommon || hasAnyCheckbox) && (
+                    <div className="mt-6 space-y-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 max-w-xs">
+                          {isEditingCommon ? (
+                            <input
+                              className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm font-semibold text-gray-900 bg-white"
+                              value={checkboxTitle}
+                              onChange={(e) => setCheckboxTitle(e.target.value)}
+                              placeholder="체크박스 설정 이름을 입력하세요"
+                            />
+                          ) : (
+                            <h3 className="text-sm font-semibold text-gray-900">
+                              {checkboxTitle || '체크박스 설정'}
+                            </h3>
+                          )}
+                        </div>
+                        {isEditingCommon && (
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-gray-600 mt-1">
+                              제목 아래에 노출될 체크박스 항목들을 추가하고, 기본 선택 여부를 설정합니다.
+                            </p>
+                            <button
+                              type="button"
+                              className="px-3 py-1.5 text-xs rounded-md border border-red-200 text-red-700 hover:bg-red-50"
+                              onClick={() => {
+                                if (!window.confirm('현재 체크박스 설정 전체를 삭제하시겠습니까?')) return;
+                                setCheckboxItems([]);
+                                setShowCheckboxBlock(false);
+                              }}
+                            >
+                              전체 삭제
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="border border-gray-200 rounded-md bg-gray-50 p-4 space-y-3">
+                        {checkboxItems.length === 0 ? (
+                          <div className="text-xs text-gray-400 text-center py-6">
+                            아직 체크박스 항목이 없습니다. 아래 추가하기 버튼으로 항목을 만들어주세요.
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {checkboxItems.map((item, idx) => (
+                              <div
+                                key={item.id}
+                                className="flex items-center gap-2 bg-white border border-gray-200 rounded-md px-2 py-1 text-xs md:text-sm w-full sm:w-[48%] md:w-[32%] lg:w-[18%]"
+                              >
+                                <span className="text-[10px] text-gray-400">{idx + 1}.</span>
+                                <label className="flex items-center gap-1 flex-1">
+                                  <input
+                                    type="checkbox"
+                                    className="h-3 w-3 md:h-4 md:w-4"
+                                    checked={item.defaultChecked}
+                                    onChange={(e) => {
+                                      const next = [...checkboxItems];
+                                      next[idx] = { ...next[idx], defaultChecked: e.target.checked };
+                                      setCheckboxItems(next);
+                                    }}
+                                  />
+                                  {isEditingCommon ? (
+                                    <input
+                                      className="flex-1 border border-gray-300 rounded-md px-1.5 py-0.5 text-[11px]"
+                                      value={item.label}
+                                      onChange={(e) => {
+                                        const next = [...checkboxItems];
+                                        next[idx] = { ...next[idx], label: e.target.value };
+                                        setCheckboxItems(next);
+                                      }}
+                                      placeholder="체크박스 항목 이름"
+                                    />
+                                  ) : (
+                                    <span className="text-xs md:text-sm text-gray-800 truncate">
+                                      {item.label}
+                                    </span>
+                                  )}
+                                </label>
+                                {isEditingCommon && (
+                                  <button
+                                    type="button"
+                                    className="text-[10px] text-red-600 hover:text-red-800"
+                                    onClick={() => {
+                                      setCheckboxItems((prev) => prev.filter((x) => x.id !== item.id));
+                                    }}
+                                  >
+                                    삭제
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {isEditingCommon && (
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              className="px-3 py-1.5 text-xs rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                              onClick={() => {
+                                const label = window.prompt('체크박스 항목 이름을 입력하세요') ?? '';
+                                const trimmed = label.trim();
+                                if (!trimmed) return;
+                                setCheckboxItems((prev) => [
+                                  ...prev,
+                                  { id: `cb-${Date.now()}-${prev.length}`, label: trimmed, defaultChecked: false },
+                                ]);
+                              }}
+                            >
+                              체크박스 항목 추가
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -409,6 +610,7 @@ export default function AdminSettingsPage() {
             )}
           </section>
         </div>
+
       </main>
       {/* 공통 데이터 설정 - 항목 추가 모달 */}
       {isEditingCommon && isAddModalOpen && (
@@ -425,21 +627,44 @@ export default function AdminSettingsPage() {
             </div>
 
             <div className="space-y-4">
-              <p className="text-xs text-gray-600">
-                먼저 어떤 종류의 공통 설정을 추가할지 선택하세요. (현재는 카테고리 추가만 제공)
-              </p>
+              <p className="text-xs text-gray-600">먼저 어떤 종류의 공통 설정을 추가할지 선택하세요.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <button
                   type="button"
                   className="border border-gray-200 rounded-md p-4 text-left hover:bg-gray-50"
                   onClick={() => {
-                    setActiveCommonTool('category');
-                    setIsAddModalOpen(false);
+                      setActiveCommonTool('category');
+                      setShowCategoryBlock(true);
+                      if (!hasAnyCategory) {
+                        setCategoryTitle('카테고리 트리 설정 (대/중/소)');
+                        setCategoryTree({});
+                        setSelectedLargeCategory(null);
+                        setSelectedMidCategory(null);
+                      }
+                      setIsAddModalOpen(false);
                   }}
                 >
                   <div className="font-semibold text-gray-900 mb-1">카테고리 추가</div>
                   <div className="text-xs text-gray-600">
                     시험/가격 등에서 공통으로 사용할 대/중/소 카테고리 구조를 설정합니다.
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  className="border border-gray-200 rounded-md p-4 text-left hover:bg-gray-50"
+                  onClick={() => {
+                    setActiveCommonTool('checkbox');
+                    setShowCheckboxBlock(true);
+                    if (!hasAnyCheckbox) {
+                      setCheckboxTitle('체크박스 설정');
+                      setCheckboxItems([]);
+                    }
+                    setIsAddModalOpen(false);
+                  }}
+                >
+                  <div className="font-semibold text-gray-900 mb-1">체크박스 추가</div>
+                  <div className="text-xs text-gray-600">
+                    제목과 여러 개의 체크박스 항목을 정의하고, 기본 선택 여부를 설정합니다.
                   </div>
                 </button>
               </div>
