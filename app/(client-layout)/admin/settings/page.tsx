@@ -143,6 +143,10 @@ export default function AdminSettingsPage() {
   const [pages, setPages] = useState<PageConfig[]>([]);
   const [pageQuery, setPageQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  /** 페이지별 설정 화면: 편집 중인 페이지 key (null이면 목록) */
+  const [editingPageKey, setEditingPageKey] = useState<string | null>(null);
+  /** 페이지별 활성화된 공통 블록 id 목록 (key = 페이지 key) */
+  const [pageActiveBlocks, setPageActiveBlocks] = useState<Record<string, string[]>>({});
 
   const filteredPages = useMemo(() => {
     const q = pageQuery.trim().toLowerCase();
@@ -857,6 +861,106 @@ export default function AdminSettingsPage() {
                   )}
                 </div>
               </>
+            ) : editingPageKey ? (
+              /* 페이지 설정 화면 (설정 편집 진입 시) */
+              (() => {
+                const page = pages.find((p) => p.key === editingPageKey);
+                if (!page) {
+                  return (
+                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                      <p className="text-sm text-gray-500 mb-2">해당 페이지를 찾을 수 없습니다.</p>
+                      <button
+                        type="button"
+                        className="text-sm text-indigo-600 hover:underline"
+                        onClick={() => setEditingPageKey(null)}
+                      >
+                        목록으로 돌아가기
+                      </button>
+                    </div>
+                  );
+                }
+                const activeIds = pageActiveBlocks[editingPageKey] ?? [];
+                const toggleBlock = (blockId: string) => {
+                  setPageActiveBlocks((prev) => {
+                    const list = prev[editingPageKey] ?? [];
+                    const next = list.includes(blockId)
+                      ? list.filter((id) => id !== blockId)
+                      : [...list, blockId];
+                    return { ...prev, [editingPageKey]: next };
+                  });
+                };
+                return (
+                  <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-8">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          className="text-sm text-gray-600 hover:text-gray-900"
+                          onClick={() => setEditingPageKey(null)}
+                        >
+                          ← 목록으로
+                        </button>
+                        <h2 className="text-lg font-semibold text-gray-900">{page.name} 설정</h2>
+                      </div>
+                    </div>
+
+                    <section>
+                      <h3 className="text-sm font-semibold text-gray-900 mb-2">공통 데이터 설정</h3>
+                      <p className="text-xs text-gray-600 mb-4">
+                        공통 데이터 설정에서 저장한 블록을 이 페이지에 불러옵니다. 활성화하면 해당 데이터가 이 페이지에 적용됩니다.
+                      </p>
+                      <div className="space-y-2">
+                        {blocks.length === 0 ? (
+                          <div className="text-xs text-gray-400 py-4 border border-dashed border-gray-200 rounded-md text-center">
+                            공통 데이터 설정에 블록이 없습니다. 공통 데이터 설정 탭에서 먼저 추가하세요.
+                          </div>
+                        ) : (
+                          blocks.map((b) => {
+                            const title = b.type === 'category' ? b.title : b.type === 'checkbox' ? b.title : b.title;
+                            const isActive = activeIds.includes(b.id);
+                            return (
+                              <div
+                                key={b.id}
+                                className="flex items-center justify-between border border-gray-200 rounded-md px-4 py-3 bg-gray-50"
+                              >
+                                <div>
+                                  <span className="text-sm font-medium text-gray-900">{title}</span>
+                                  <span className="ml-2 text-[11px] text-gray-500">
+                                    {b.type === 'category' && '카테고리'}
+                                    {b.type === 'checkbox' && '체크박스'}
+                                    {b.type === 'dropdown' && '드롭다운'}
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  className={`px-3 py-1.5 text-xs rounded-md font-medium ${
+                                    isActive
+                                      ? 'bg-green-600 text-white hover:bg-green-700'
+                                      : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
+                                  }`}
+                                  onClick={() => toggleBlock(b.id)}
+                                >
+                                  {isActive ? '활성화됨' : '활성화'}
+                                </button>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </section>
+
+                    <section>
+                      <h3 className="text-sm font-semibold text-gray-900 mb-2">추가 설정</h3>
+                      <p className="text-xs text-gray-600 mb-4">
+                        이 페이지만을 위한 추가 설정 항목입니다. (추후 확장)
+                      </p>
+                      <div className="border border-dashed border-gray-200 rounded-md bg-gray-50 px-4 py-8 text-center text-xs text-gray-400">
+                        추가 설정 항목이 없습니다.
+                      </div>
+                    </section>
+                  </div>
+                );
+              })()
             ) : (
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <div className="flex items-center justify-between gap-4 mb-4">
@@ -931,7 +1035,7 @@ export default function AdminSettingsPage() {
                                 <button
                                   type="button"
                                   className="px-3 py-1.5 text-xs rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-                                  onClick={() => alert(`페이지 설정 편집(예정): ${p.name} (key: ${p.key})`)}
+                                  onClick={() => setEditingPageKey(p.key)}
                                 >
                                   설정 편집
                                 </button>
