@@ -20,6 +20,7 @@ const MOCK_PAGES: PageConfig[] = [
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('common');
+  const [isEditingCommon, setIsEditingCommon] = useState(false);
   const [pageQuery, setPageQuery] = useState('');
 
   const filteredPages = useMemo(() => {
@@ -76,17 +77,43 @@ export default function AdminSettingsPage() {
                         여러 페이지가 공유하는 설정의 기본값을 정의합니다. 이후 페이지별 설정에서 필요한 항목만 오버라이드할 수 있습니다.
                       </p>
                     </div>
-                    <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
-                      확장 준비
-                    </span>
+                    <button
+                      type="button"
+                      className="text-xs px-3 py-1.5 rounded-md bg-indigo-600 text-white font-semibold hover:bg-indigo-700"
+                      onClick={() => {
+                        if (isEditingCommon) {
+                          // TODO: 저장 로직 연결 예정
+                          alert('공통 데이터 설정이 (mock) 저장되었습니다.');
+                        }
+                        setIsEditingCommon((prev) => !prev);
+                      }}
+                    >
+                      {isEditingCommon ? '저장하기' : '수정하기'}
+                    </button>
                   </div>
 
                   <div className="border border-dashed border-gray-200 rounded-lg bg-gray-50 px-6 py-14 text-center">
-                    <div className="text-sm font-semibold text-gray-700 mb-1">내용 없음</div>
+                    <div className="text-sm font-semibold text-gray-700 mb-1">
+                      {isEditingCommon ? '공통 데이터 설정 편집 모드' : '내용 없음'}
+                    </div>
                     <div className="text-xs text-gray-500">
-                      공통 데이터 설정 항목은 요청 주시면 여기부터 구성하겠습니다.
+                      {isEditingCommon
+                        ? '여기에 공통 데이터 설정 항목이 추가될 예정입니다.'
+                        : '공통 데이터 설정 항목은 요청 주시면 여기부터 구성하겠습니다.'}
                     </div>
                   </div>
+
+                  {isEditingCommon && (
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 text-xs rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        onClick={() => alert('새 공통 설정 항목 추가 (mock)')}
+                      >
+                        추가하기
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
