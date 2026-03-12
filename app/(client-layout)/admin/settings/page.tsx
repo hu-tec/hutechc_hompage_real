@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import * as XLSX from 'xlsx';
 
 const STORAGE_KEY = 'hutechc-admin-settings';
@@ -228,7 +227,6 @@ const INITIAL_COMMON_BLOCKS: CommonBlock[] = [
 ];
 
 export default function AdminSettingsPage() {
-  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<SettingsTab>('common');
   const [isEditingCommon, setIsEditingCommon] = useState(false);
   const [blocks, setBlocks] = useState<CommonBlock[]>(INITIAL_COMMON_BLOCKS);
@@ -268,7 +266,7 @@ export default function AdminSettingsPage() {
   /** 커리큘럼 편집 UI: 공통데이터 불러오기 모달 */
   const [curriculumImportCtx, setCurriculumImportCtx] = useState<null | { currKey: string; stageId: string }>(null);
 
-  const previewOnlyKey = searchParams.get('preview');
+  const [previewOnlyKey, setPreviewOnlyKey] = useState<string | null>(null);
   const isPreviewOnly = Boolean(previewOnlyKey);
 
   const getDefaultFieldLevelBlockIds = () => {
@@ -276,6 +274,16 @@ export default function AdminSettingsPage() {
     const level = blocks.find((b) => b.type === 'category' && (b.title ?? '').includes('급수'))?.id ?? null;
     return { field, level };
   };
+
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return;
+      const key = new URLSearchParams(window.location.search).get('preview');
+      setPreviewOnlyKey(key);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
     if (!previewOnlyKey) return;
