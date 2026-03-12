@@ -2,7 +2,12 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-export type LanguageTier = "tier1" | "tier2" | "tier3" | "tier4";
+export type LanguageTier = string;
+
+export interface LanguageTierItem {
+  id: LanguageTier;
+  label: string;
+}
 
 export interface LanguageConfigItem {
   code: string; // ISO 코드 (예: ko, en)
@@ -12,8 +17,9 @@ export interface LanguageConfigItem {
 }
 
 interface LanguageConfigState {
+  tiers: LanguageTierItem[];
   languages: LanguageConfigItem[];
-  tierMultipliers: Record<LanguageTier, number>; // 예: tier1=1, tier2=1.2 등
+  tierMultipliers: Record<string, number>; // 예: tier1=1, tier2=1.2 등
 }
 
 interface LanguageConfigContextType extends LanguageConfigState {
@@ -21,6 +27,8 @@ interface LanguageConfigContextType extends LanguageConfigState {
   updateTierMultiplier: (tier: LanguageTier, value: number) => void;
   addLanguage: (item: LanguageConfigItem) => void;
   removeLanguage: (code: string) => void;
+  addTier: () => LanguageTier;
+  removeTier: (tier: LanguageTier) => void;
 }
 
 const LanguageConfigContext = createContext<LanguageConfigContextType | undefined>(
@@ -53,7 +61,14 @@ const DEFAULT_LANGUAGES: LanguageConfigItem[] = [
   { code: "fa", name: "페르시아어", tier: "tier4", enabled: false },
 ];
 
-const DEFAULT_TIER_MULTIPLIERS: Record<LanguageTier, number> = {
+const DEFAULT_TIERS: LanguageTierItem[] = [
+  { id: "tier1", label: "Tier 1" },
+  { id: "tier2", label: "Tier 2" },
+  { id: "tier3", label: "Tier 3" },
+  { id: "tier4", label: "Tier 4" },
+];
+
+const DEFAULT_TIER_MULTIPLIERS: Record<string, number> = {
   tier1: 1.0,
   tier2: 1.2,
   tier3: 1.5,
@@ -62,12 +77,26 @@ const DEFAULT_TIER_MULTIPLIERS: Record<LanguageTier, number> = {
 
 const STORAGE_KEY = "languageConfig";
 
+function deriveTierLabel(id: string) {
+  const m = /^tier(\d+)$/.exec(id);
+  if (m) return `Tier ${m[1]}`;
+  return id;
+}
+
+function getNextTierId(existing: LanguageTierItem[]) {
+  const used = new Set(existing.map((t) => t.id));
+  let n = 1;
+  while (used.has(`tier${n}`)) n += 1;
+  return `tier${n}`;
+}
+
 export function LanguageConfigProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const [state, setState] = useState<LanguageConfigState>({
+    tiers: DEFAULT_TIERS,
     languages: DEFAULT_LANGUAGES,
     tierMultipliers: DEFAULT_TIER_MULTIPLIERS,
   });
@@ -80,6 +109,20 @@ export function LanguageConfigProvider({
       if (stored) {
         const parsed = JSON.parse(stored) as Partial<LanguageConfigState>;
         setState((prev) => ({
+          tiers:
+            parsed.tiers && Array.isArray(parsed.tiers) && parsed.tiers.length > 0
+              ? parsed.tiers
+              : (() => {
+                  const keys = Object.keys((parsed.tierMultipliers ?? prev.tierMultipliers) as Record<
+                    string,
+                    number
+                  >);
+                  const base = keys.length > 0 ? keys : prev.tiers.map((t) => t.id);
+                  return base
+                    .slice()
+                    .sort((a, b) => a.localeCompare(b))
+                    .map((id) => ({ id, label: deriveTierLabel(id) }));
+                })(),
           languages: parsed.languages ?? prev.languages,
           tierMultipliers: {
             ...prev.tierMultipliers,
@@ -148,6 +191,43 @@ export function LanguageConfigProvider({
     });
   };
 
+  const addTier = () => {
+    const nextId = getNextTierId(state.tiers);
+    setState((prev) => {
+      const tiers = [...prev.tiers, { id: nextId, label: deriveTierLabel(nextId) }];
+      const tierMultipliers = { ...prev.tierMultipliers, [nextId]: 1.0 };
+      const next: LanguageConfigState = { ...prev, tiers, tierMultipliers };
+      persist(next);
+      return next;
+    });
+    return nextId;
+  };
+
+  const removeTier = (tier: LanguageTier) => {
+    setState((prev) => {
+      const exists = prev.tiers.some((t) => t.id === tier);
+      if (!exists) return prev;
+      if (prev.tiers.length <= 1) return prev;
+
+      const remainingTiers = prev.tiers.filter((t) => t.id !== tier);
+      const fallbackTier = remainingTiers[remainingTiers.length - 1]?.id ?? remainingTiers[0]?.id ?? "tier1";
+
+      const nextLanguages = prev.languages.map((l) => (l.tier === tier ? { ...l, tier: fallbackTier } : l));
+
+      const nextMultipliers = { ...prev.tierMultipliers };
+      delete nextMultipliers[tier];
+
+      const next: LanguageConfigState = {
+        ...prev,
+        tiers: remainingTiers,
+        languages: nextLanguages,
+        tierMultipliers: nextMultipliers,
+      };
+      persist(next);
+      return next;
+    });
+  };
+
   return (
     <LanguageConfigContext.Provider
       value={{
@@ -156,6 +236,8 @@ export function LanguageConfigProvider({
         updateTierMultiplier,
         addLanguage,
         removeLanguage,
+        addTier,
+        removeTier,
       }}
     >
       {children}

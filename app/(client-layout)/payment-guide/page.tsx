@@ -5,17 +5,10 @@ import { useRouter } from 'next/navigation';
 import { usePrice } from '@/lib/priceContext';
 import { useLanguageConfig, type LanguageTier } from '@/lib/languageConfig';
 
-const TIER_LABELS: Record<LanguageTier, string> = {
-  tier1: 'Tier 1',
-  tier2: 'Tier 2',
-  tier3: 'Tier 3',
-  tier4: 'Tier 4',
-};
-
 export default function PaymentGuidePage() {
   const router = useRouter();
   const { prices } = usePrice();
-  const { languages, tierMultipliers } = useLanguageConfig();
+  const { tiers, languages, tierMultipliers } = useLanguageConfig();
   const [selectedLargeCategory, setSelectedLargeCategory] = React.useState<string | null>(null);
   const [selectedMidCategory, setSelectedMidCategory] = React.useState<string | null>(null);
 
@@ -109,18 +102,19 @@ export default function PaymentGuidePage() {
                 </tr>
               </thead>
               <tbody>
-                {(Object.keys(TIER_LABELS) as LanguageTier[]).map((tier) => {
+                {tiers.map((t, idx) => {
+                  const tier: LanguageTier = t.id;
                   const tierLanguages = enabledLanguages.filter((l) => l.tier === tier);
                   const names = tierLanguages.map((l) => l.name).join(', ');
                   return (
                     <tr
                       key={tier}
-                      className={`$${'{'}tier !== 'tier4' ? 'border-b border-gray-100' : ''}$${'}'} hover:bg-blue-50`}
+                      className={`${idx < tiers.length - 1 ? 'border-b border-gray-100' : ''} hover:bg-blue-50`}
                     >
-                      <td className="py-2 px-3">{TIER_LABELS[tier]}</td>
+                      <td className="py-2 px-3">{t.label}</td>
                       <td className="py-2 px-3">{names || '-'}</td>
                       <td className="py-2 px-3">
-                        <strong>×{tierMultipliers[tier]}</strong>
+                        <strong>×{tierMultipliers[tier] ?? 1}</strong>
                       </td>
                     </tr>
                   );

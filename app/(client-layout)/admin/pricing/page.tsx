@@ -3,14 +3,9 @@
 import Link from 'next/link';
 import { usePrice, type PriceSettings } from '@/lib/priceContext';
 import { useLanguageConfig, type LanguageTier } from '@/lib/languageConfig';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-const TIER_LABELS: Record<LanguageTier, string> = {
-  tier1: 'Tier 1',
-  tier2: 'Tier 2',
-  tier3: 'Tier 3',
-  tier4: 'Tier 4',
-};
+const tierLabelFallback = (tier: LanguageTier) => tier;
 
 type PriceTableType =
   | 'client'
@@ -77,12 +72,15 @@ const EXPERT_REVIEW_ITEMS: { key: string; label: string }[] = [
 export default function AdminPricingPage() {
   const { prices, updatePrices } = usePrice();
   const {
+    tiers,
     languages,
     tierMultipliers,
     updateLanguage,
     updateTierMultiplier,
     addLanguage,
     removeLanguage,
+    addTier,
+    removeTier,
   } = useLanguageConfig();
   const [saved, setSaved] = useState(false);
   const [priceTableType, setPriceTableType] = useState<PriceTableType>('client');
@@ -141,6 +139,41 @@ export default function AdminPricingPage() {
     });
     setSaved(false);
   };
+
+  const tierMultiplierRowRef = useRef<HTMLDivElement | null>(null);
+  const tierLanguagesRowRef = useRef<HTMLDivElement | null>(null);
+  const didInitTierScrollRef = useRef(false);
+
+  const scrollTierRowsToEnd = () => {
+    const rows = [tierMultiplierRowRef.current, tierLanguagesRowRef.current].filter(Boolean) as HTMLDivElement[];
+    for (const el of rows) {
+      el.scrollLeft = el.scrollWidth;
+    }
+  };
+
+  const scrollTierRowsToTier = (tierId: string) => {
+    const rows = [tierMultiplierRowRef.current, tierLanguagesRowRef.current].filter(Boolean) as HTMLDivElement[];
+    for (const row of rows) {
+      const target = row.querySelector(`[data-tier-id="${tierId}"]`) as HTMLElement | null;
+      if (!target) continue;
+      const desiredLeft = Math.max(0, target.offsetLeft + target.offsetWidth - row.clientWidth);
+      row.scrollLeft = desiredLeft;
+    }
+  };
+
+  // 처음 진입 시에는 tier4까지만 보이게(=tier4가 오른쪽 끝에 오도록) 고정
+  useEffect(() => {
+    if (didInitTierScrollRef.current) return;
+    if (!tiers || tiers.length === 0) return;
+    didInitTierScrollRef.current = true;
+    const id = window.setTimeout(() => {
+      // tier4가 없으면 마지막 티어 기준
+      const hasTier4 = tiers.some((t) => t.id === 'tier4');
+      if (hasTier4) scrollTierRowsToTier('tier4');
+      else scrollTierRowsToEnd();
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [tiers]);
 
   const handleRemoveLanguage = (code: string) => {
     if (!window.confirm('이 언어를 목록에서 삭제하시겠습니까?')) return;
@@ -1351,19 +1384,26 @@ export default function AdminPricingPage() {
             {/* 티어별 계수 */}
             <div className="mb-6">
               <h3 className="font-semibold text-gray-900 mb-2">티어별 계수 (가격 배수)</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                {(Object.keys(TIER_LABELS) as LanguageTier[]).map((tier) => (
-                  <div key={tier} className="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                    <div className="text-xs text-gray-600 mb-1">{TIER_LABELS[tier]}</div>
+              <div
+                ref={tierMultiplierRowRef}
+                className="flex flex-nowrap gap-3 overflow-x-auto min-w-0 pb-1 text-sm"
+              >
+                {tiers.map((t) => (
+                  <div
+                    key={t.id}
+                    data-tier-id={t.id}
+                    className="shrink-0 w-44 bg-gray-50 rounded-lg border border-gray-200 p-3"
+                  >
+                    <div className="text-xs text-gray-600 mb-1">{t.label}</div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-700">×</span>
                       <input
                         type="number"
                         step="0.1"
                         min={0.1}
-                        value={tierMultipliers[tier]}
+                        value={tierMultipliers[t.id] ?? 1}
                         onChange={(e) => {
-                          updateTierMultiplier(tier, Number(e.target.value));
+                          updateTierMultiplier(t.id, Number(e.target.value));
                           setSaved(false);
                         }}
                         className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -1376,35 +1416,72 @@ export default function AdminPricingPage() {
 
             {/* 언어별 티어 및 사용 여부 (티어별 박스) */}
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">티어별 언어 구성</h3>
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <h3 className="font-semibold text-gray-900">티어별 언어 구성</h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    addTier();
+                    setSaved(false);
+                    // 티어 추가 시에는 새로 추가된 티어가 보이도록 오른쪽으로 이동
+                    window.setTimeout(() => {
+                      scrollTierRowsToEnd();
+                    }, 0);
+                  }}
+                  className="px-3 py-1.5 rounded-md bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700"
+                >
+                  티어 추가
+                </button>
+              </div>
               <p className="text-xs text-gray-500 mb-3">
                 각 티어 박스에서 언어를 추가/삭제하고, 사용 여부를 설정할 수 있습니다.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(Object.keys(TIER_LABELS) as LanguageTier[]).map((tier) => {
+              <div
+                ref={tierLanguagesRowRef}
+                className="flex flex-nowrap gap-3 overflow-x-auto min-w-0 pb-1"
+              >
+                {tiers.map((t) => {
+                  const tier = t.id;
                   const tierLanguages = languages.filter((l) => l.tier === tier);
                   return (
                     <div
                       key={tier}
-                      className="border border-gray-200 rounded-lg p-4 bg-gray-50 flex flex-col"
+                      data-tier-id={tier}
+                      className="shrink-0 w-64 border border-gray-200 rounded-lg p-4 bg-gray-50 flex flex-col"
                     >
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center justify-between mb-2 gap-2 flex-nowrap">
                         <div>
-                          <div className="text-sm font-semibold text-gray-900">
-                            {TIER_LABELS[tier]}
+                          <div className="text-xs font-semibold text-gray-900">
+                            {t.label ?? tierLabelFallback(tier)}
                           </div>
-                          <div className="text-xs text-gray-500">
-                            현재 언어 {tierLanguages.length}개
+                          <div className="text-[11px] text-gray-500 leading-tight">
+                            <div>현재 언어</div>
+                            <div className="font-semibold text-gray-700">{tierLanguages.length}개</div>
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleAddLanguage(tier)}
-                          className="px-3 py-1 rounded-md bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700"
-                        >
-                          언어 추가하기
-                        </button>
+                        <div className="flex items-center gap-1.5 flex-nowrap shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleAddLanguage(tier)}
+                            className="px-2 py-1 rounded-md bg-indigo-600 text-white text-[11px] font-semibold hover:bg-indigo-700 whitespace-nowrap leading-none"
+                          >
+                            언어 추가하기
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!window.confirm(`${t.label ?? tier} 티어를 삭제하시겠습니까? (해당 티어 언어는 다른 티어로 이동됩니다)`)) {
+                                return;
+                              }
+                              removeTier(tier);
+                              setSaved(false);
+                            }}
+                            className="px-2 py-1 rounded-md bg-red-600 text-white text-[11px] font-semibold hover:bg-red-700 whitespace-nowrap leading-none"
+                          >
+                            티어 삭제
+                          </button>
+                        </div>
                       </div>
 
                       {tierLanguages.length === 0 ? (
@@ -1561,13 +1638,14 @@ export default function AdminPricingPage() {
                     </div>
                     <div className="mt-2 pt-2 border-t border-gray-200">
                       <div className="text-xs text-gray-500 mb-2">티어별 최종 가격 (티어 계수 적용 후):</div>
-                      {(Object.keys(TIER_LABELS) as LanguageTier[]).map((tier) => {
-                        const tierMultiplier = tierMultipliers[tier];
+                      {tiers.map((t) => {
+                        const tier = t.id;
+                        const tierMultiplier = tierMultipliers[tier] ?? 1;
                         const clientPrice = prices.translator_text * tierMultiplier;
                         const translatorPrice = Math.round(clientPrice * translatorRatios.translator_text_ratio / 100);
                         return (
                           <div key={tier} className="text-xs text-gray-600 mb-1 flex justify-between">
-                            <span>{TIER_LABELS[tier]} (×{tierMultiplier}):</span>
+                            <span>{t.label ?? tierLabelFallback(tier)} (×{tierMultiplier}):</span>
                             <span className="font-semibold">의뢰자 ₩{Math.round(clientPrice)} → 번역사 ₩{translatorPrice}</span>
                           </div>
                         );
@@ -1598,13 +1676,14 @@ export default function AdminPricingPage() {
                     </div>
                     <div className="mt-2 pt-2 border-t border-gray-200">
                       <div className="text-xs text-gray-500 mb-2">티어별 최종 가격:</div>
-                      {(Object.keys(TIER_LABELS) as LanguageTier[]).map((tier) => {
-                        const tierMultiplier = tierMultipliers[tier];
+                      {tiers.map((t) => {
+                        const tier = t.id;
+                        const tierMultiplier = tierMultipliers[tier] ?? 1;
                         const clientPrice = prices.translator_voice * tierMultiplier;
                         const translatorPrice = Math.round(clientPrice * translatorRatios.translator_voice_ratio / 100);
                         return (
                           <div key={tier} className="text-xs text-gray-600 mb-1 flex justify-between">
-                            <span>{TIER_LABELS[tier]} (×{tierMultiplier}):</span>
+                            <span>{t.label ?? tierLabelFallback(tier)} (×{tierMultiplier}):</span>
                             <span className="font-semibold">의뢰자 ₩{Math.round(clientPrice)} → 번역사 ₩{translatorPrice}</span>
                           </div>
                         );
@@ -1635,13 +1714,14 @@ export default function AdminPricingPage() {
                     </div>
                     <div className="mt-2 pt-2 border-t border-gray-200">
                       <div className="text-xs text-gray-500 mb-2">티어별 최종 가격:</div>
-                      {(Object.keys(TIER_LABELS) as LanguageTier[]).map((tier) => {
-                        const tierMultiplier = tierMultipliers[tier];
+                      {tiers.map((t) => {
+                        const tier = t.id;
+                        const tierMultiplier = tierMultipliers[tier] ?? 1;
                         const clientPrice = prices.translator_video * tierMultiplier;
                         const translatorPrice = Math.round(clientPrice * translatorRatios.translator_video_ratio / 100);
                         return (
                           <div key={tier} className="text-xs text-gray-600 mb-1 flex justify-between">
-                            <span>{TIER_LABELS[tier]} (×{tierMultiplier}):</span>
+                            <span>{t.label ?? tierLabelFallback(tier)} (×{tierMultiplier}):</span>
                             <span className="font-semibold">의뢰자 ₩{Math.round(clientPrice)} → 번역사 ₩{translatorPrice}</span>
                           </div>
                         );
@@ -1672,13 +1752,14 @@ export default function AdminPricingPage() {
                     </div>
                     <div className="mt-2 pt-2 border-t border-gray-200">
                       <div className="text-xs text-gray-500 mb-2">티어별 최종 가격:</div>
-                      {(Object.keys(TIER_LABELS) as LanguageTier[]).map((tier) => {
-                        const tierMultiplier = tierMultipliers[tier];
+                      {tiers.map((t) => {
+                        const tier = t.id;
+                        const tierMultiplier = tierMultipliers[tier] ?? 1;
                         const clientPrice = prices.ai_text * tierMultiplier;
                         const translatorPrice = Math.round(clientPrice * translatorRatios.ai_text_ratio / 100);
                         return (
                           <div key={tier} className="text-xs text-gray-600 mb-1 flex justify-between">
-                            <span>{TIER_LABELS[tier]} (×{tierMultiplier}):</span>
+                            <span>{t.label ?? tierLabelFallback(tier)} (×{tierMultiplier}):</span>
                             <span className="font-semibold">의뢰자 ₩{clientPrice.toFixed(1)} → 번역사 ₩{translatorPrice.toFixed(1)}</span>
                           </div>
                         );
@@ -1709,13 +1790,14 @@ export default function AdminPricingPage() {
                     </div>
                     <div className="mt-2 pt-2 border-t border-gray-200">
                       <div className="text-xs text-gray-500 mb-2">티어별 최종 가격:</div>
-                      {(Object.keys(TIER_LABELS) as LanguageTier[]).map((tier) => {
-                        const tierMultiplier = tierMultipliers[tier];
+                      {tiers.map((t) => {
+                        const tier = t.id;
+                        const tierMultiplier = tierMultipliers[tier] ?? 1;
                         const clientPrice = prices.ai_voice * tierMultiplier;
                         const translatorPrice = Math.round(clientPrice * translatorRatios.ai_voice_ratio / 100);
                         return (
                           <div key={tier} className="text-xs text-gray-600 mb-1 flex justify-between">
-                            <span>{TIER_LABELS[tier]} (×{tierMultiplier}):</span>
+                            <span>{t.label ?? tierLabelFallback(tier)} (×{tierMultiplier}):</span>
                             <span className="font-semibold">의뢰자 ₩{Math.round(clientPrice)} → 번역사 ₩{translatorPrice}</span>
                           </div>
                         );
@@ -1746,13 +1828,14 @@ export default function AdminPricingPage() {
                     </div>
                     <div className="mt-2 pt-2 border-t border-gray-200">
                       <div className="text-xs text-gray-500 mb-2">티어별 최종 가격:</div>
-                      {(Object.keys(TIER_LABELS) as LanguageTier[]).map((tier) => {
-                        const tierMultiplier = tierMultipliers[tier];
+                      {tiers.map((t) => {
+                        const tier = t.id;
+                        const tierMultiplier = tierMultipliers[tier] ?? 1;
                         const clientPrice = prices.ai_video * tierMultiplier;
                         const translatorPrice = Math.round(clientPrice * translatorRatios.ai_video_ratio / 100);
                         return (
                           <div key={tier} className="text-xs text-gray-600 mb-1 flex justify-between">
-                            <span>{TIER_LABELS[tier]} (×{tierMultiplier}):</span>
+                            <span>{t.label ?? tierLabelFallback(tier)} (×{tierMultiplier}):</span>
                             <span className="font-semibold">의뢰자 ₩{Math.round(clientPrice)} → 번역사 ₩{translatorPrice}</span>
                           </div>
                         );
