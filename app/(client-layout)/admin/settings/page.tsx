@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import * as XLSX from 'xlsx';
 
 const STORAGE_KEY = 'hutechc-admin-settings';
@@ -228,7 +228,6 @@ const INITIAL_COMMON_BLOCKS: CommonBlock[] = [
 ];
 
 export default function AdminSettingsPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<SettingsTab>('common');
   const [isEditingCommon, setIsEditingCommon] = useState(false);
@@ -263,7 +262,7 @@ export default function AdminSettingsPage() {
   >({});
   const [previewCheckboxPick, setPreviewCheckboxPick] = useState<Record<string, string[]>>({});
   const [previewDropdownPick, setPreviewDropdownPick] = useState<Record<string, string>>({});
-  const [previewQuestionAnswers, setPreviewQuestionAnswers] = useState<Record<string, any>>({});
+  const [previewQuestionAnswers, setPreviewQuestionAnswers] = useState<Record<string, unknown>>({});
   /** 커리큘럼 편집 UI: 대상 펼침 상태 */
   const [curriculumTargetOpen, setCurriculumTargetOpen] = useState<Record<string, boolean>>({});
   /** 커리큘럼 편집 UI: 공통데이터 불러오기 모달 */
@@ -335,66 +334,103 @@ export default function AdminSettingsPage() {
         if (!list) return list;
         return list.map((b) => {
           if (b.type !== 'questionType') return b;
-          if (Array.isArray((b as any).questions)) return b;
-          const legacy = b as any;
-          if (legacy.kind) {
+          // 이미 신버전(questions[])이면 그대로
+          if (Array.isArray(b.questions)) return b;
+
+          const legacy = b as unknown as {
+            id?: string;
+            title?: string;
+            requiredActivation?: boolean;
+            kind?: unknown;
+            choices?: unknown;
+            oxValue?: unknown;
+          };
+          if (legacy.kind === 'mcq' || legacy.kind === 'short' || legacy.kind === 'essay' || legacy.kind === 'ox') {
             const q: QuestionItem = {
               id: `q-${Date.now()}-0`,
-              kind: legacy.kind as QuestionKind,
+              kind: legacy.kind,
               title: legacy.title ?? '',
-              choices: legacy.choices,
-              oxValue: legacy.oxValue ?? null,
+              choices: Array.isArray(legacy.choices)
+                ? ([
+                    String(legacy.choices[0] ?? '보기 1'),
+                    String(legacy.choices[1] ?? '보기 2'),
+                    String(legacy.choices[2] ?? '보기 3'),
+                    String(legacy.choices[3] ?? '보기 4'),
+                  ] as [string, string, string, string])
+                : undefined,
+              oxValue: legacy.oxValue === 'O' || legacy.oxValue === 'X' ? legacy.oxValue : null,
             };
             return {
-              id: legacy.id,
-              type: 'questionType',
+              id: legacy.id ?? b.id,
+              type: 'questionType' as const,
               title: legacy.title ?? '문제유형 설정',
               questions: [q],
               requiredActivation: legacy.requiredActivation,
             };
           }
-          return { ...b, questions: [] } as any;
+          return { ...b, questions: [] };
         });
       };
 
       if (data.pages != null) setPages(data.pages);
       if (data.curriculums != null) {
-        const migrated = (data.curriculums as any[]).map((c) => {
-          const stages = (c.stages ?? []).map((s: any) => {
+        const rawCurriculums = data.curriculums as unknown;
+        const migrated: CurriculumConfig[] = (Array.isArray(rawCurriculums) ? rawCurriculums : []).map((raw) => {
+          const c = raw as Partial<CurriculumConfig> & { stages?: unknown };
+          const rawStages = c.stages;
+          const stages: CurriculumStage[] = (Array.isArray(rawStages) ? rawStages : []).map((rawStage) => {
+            const s = rawStage as Partial<CurriculumStage> & {
+              rows?: unknown;
+              columns?: unknown;
+              field?: unknown;
+              level?: unknown;
+              targets?: unknown;
+            };
             // 이미 columns/cells 구조면 그대로
-            if (Array.isArray(s.columns) && Array.isArray(s.rows) && s.rows[0]?.cells) return s as CurriculumStage;
+            if (
+              Array.isArray(s.columns) &&
+              Array.isArray(s.rows) &&
+              (s.rows as unknown[])[0] &&
+              typeof (s.rows as unknown[])[0] === 'object' &&
+              (s.rows as Array<{ cells?: unknown }>)[0]?.cells
+            ) {
+              return s as CurriculumStage;
+            }
 
             const cols: CurriculumColumn[] =
               Array.isArray(s.columns) && s.columns.length > 0
-                ? s.columns
+                ? (s.columns as CurriculumColumn[])
                 : [
                     { id: `col-${Date.now()}-topic`, title: '주제' },
                     { id: `col-${Date.now()}-goal`, title: '교육목표' },
                     { id: `col-${Date.now()}-content`, title: '교육내용' },
                   ];
-            const rows: CurriculumWeekRow[] = (s.rows ?? []).map((r: any, idx: number) => {
+            const rawRows = (Array.isArray(s.rows) ? s.rows : []) as Array<
+              Partial<CurriculumWeekRow> & { topic?: unknown; goal?: unknown; content?: unknown }
+            >;
+            const rows: CurriculumWeekRow[] = rawRows.map((r, idx) => {
               const cells: Record<string, string> = {};
               cols.forEach((cc) => {
-                if (cc.title === '주제') cells[cc.id] = r.topic ?? '';
-                else if (cc.title === '교육목표') cells[cc.id] = r.goal ?? '';
-                else if (cc.title === '교육내용') cells[cc.id] = r.content ?? '';
+                if (cc.title === '주제') cells[cc.id] = String((r as { topic?: unknown }).topic ?? '');
+                else if (cc.title === '교육목표') cells[cc.id] = String((r as { goal?: unknown }).goal ?? '');
+                else if (cc.title === '교육내용') cells[cc.id] = String((r as { content?: unknown }).content ?? '');
                 else cells[cc.id] = '';
               });
               return {
                 id: r.id ?? `row-${Date.now()}-${idx}`,
-                week: r.week ?? idx + 1,
+                week: typeof r.week === 'number' ? r.week : idx + 1,
                 cells,
               };
             });
             return {
-              id: s.id,
+              id: s.id ?? `stage-${Date.now()}`,
               stepTitle: s.stepTitle ?? '1단계',
-              hours: s.hours ?? 60,
+              hours: typeof s.hours === 'number' ? s.hours : 60,
               className: s.className ?? '',
               courseName: s.courseName ?? '',
-              targets: s.targets ?? [],
-              field: s.field ?? { large: null, mid: null, small: null },
-              level: s.level ?? { large: null, mid: null, small: null },
+              targets: Array.isArray(s.targets) ? (s.targets as string[]) : [],
+              field: (s.field as CurriculumLevelSelection) ?? { large: null, mid: null, small: null },
+              level: (s.level as CurriculumLevelSelection) ?? { large: null, mid: null, small: null },
               commonTopBlockIds: s.commonTopBlockIds ?? ['cat-default-1', 'cat-default-2'],
               commonSideBlockIds: s.commonSideBlockIds ?? [],
               categorySelections: s.categorySelections ?? {
@@ -407,11 +443,16 @@ export default function AdminSettingsPage() {
               rows,
             } as CurriculumStage;
           });
-          return { ...c, stages } as CurriculumConfig;
+          return {
+            key: c.key ?? `curr-${Date.now()}`,
+            title: c.title ?? '커리큘럼',
+            status: (c.status as CurriculumStatus) ?? '준비중',
+            stages,
+          };
         });
-        setCurriculums(migrated as any);
+        setCurriculums(migrated);
       }
-      if (data.blocks != null) setBlocks(migrateQuestionType(data.blocks as any) as any);
+      if (data.blocks != null) setBlocks(migrateQuestionType(data.blocks) ?? []);
 
       // overrides
       if (data.pageBlockOverrides != null) {
@@ -424,8 +465,8 @@ export default function AdminSettingsPage() {
           const customized = data.pageActiveCustomized?.[pageKey] ?? true;
           if (customized) {
             const m: Record<string, boolean> = {};
-            (data.blocks ?? []).forEach((b: any) => {
-              if (b?.requiredActivation) m[b.id] = set.has(b.id);
+            (data.blocks ?? []).forEach((b) => {
+              if (b.requiredActivation) m[b.id] = set.has(b.id);
             });
             set.forEach((id) => {
               m[id] = true;
@@ -438,8 +479,8 @@ export default function AdminSettingsPage() {
 
       if (data.pageExtraBlocks != null) {
         const next: Record<string, CommonBlock[]> = {};
-        Object.entries(data.pageExtraBlocks as any).forEach(([k, v]) => {
-          next[k] = migrateQuestionType(v as any) as any;
+        (Object.entries(data.pageExtraBlocks) as Array<[string, CommonBlock[]]>).forEach(([k, v]) => {
+          next[k] = migrateQuestionType(v) ?? [];
         });
         setPageExtraBlocks(next);
       }
@@ -701,7 +742,10 @@ export default function AdminSettingsPage() {
                   {(q.kind === 'short' || q.kind === 'essay') && (
                     <input
                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white"
-                      value={previewQuestionAnswers[q.id] ?? ''}
+                      value={(() => {
+                        const ans = previewQuestionAnswers[q.id];
+                        return typeof ans === 'string' ? ans : '';
+                      })()}
                       onChange={(e) => setPreviewQuestionAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
                       placeholder="답안을 입력하세요"
                     />
@@ -924,7 +968,7 @@ export default function AdminSettingsPage() {
     const wb = XLSX.read(buf, { type: 'array' });
     const ws = wb.Sheets[wb.SheetNames[0]];
     if (!ws) return;
-    const rows = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1, defval: '' }) as any[][];
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: '' }) as unknown[][];
     if (!rows || rows.length === 0) return;
 
     const header = (rows[0] ?? []).map((v) => String(v ?? '').trim());
@@ -1398,7 +1442,13 @@ export default function AdminSettingsPage() {
                                 if (b.type !== 'questionType') return b;
                                 const next = b.questions.map((x) => {
                                   if (x.id !== q.id) return x;
-                                  const arr: [string, string, string, string] = [...(x.choices ?? ['보기 1','보기 2','보기 3','보기 4'])] as any;
+                                  const base = x.choices ?? ['보기 1', '보기 2', '보기 3', '보기 4'];
+                                  const arr: [string, string, string, string] = [
+                                    base[0] ?? '보기 1',
+                                    base[1] ?? '보기 2',
+                                    base[2] ?? '보기 3',
+                                    base[3] ?? '보기 4',
+                                  ];
                                   arr[cIdx] = e.target.value;
                                   return { ...x, choices: arr };
                                 });
