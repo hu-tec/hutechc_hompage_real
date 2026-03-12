@@ -35,6 +35,7 @@ type CurriculumStage = {
   className: string; // 반명
   courseName: string; // 과정 명칭
   targets: string[]; // 대상(checkbox item ids)
+  field: CurriculumLevelSelection; // 분야 선택(대/중/소)
   level: CurriculumLevelSelection; // 급수 선택(대/중/소)
   columns: CurriculumColumn[]; // 주차표 컬럼(주제/교육목표/교육내용 등) - 수정/추가 가능
   rows: CurriculumWeekRow[]; // 주차표
@@ -256,6 +257,8 @@ export default function AdminSettingsPage() {
   const [previewCheckboxPick, setPreviewCheckboxPick] = useState<Record<string, string[]>>({});
   const [previewDropdownPick, setPreviewDropdownPick] = useState<Record<string, string>>({});
   const [previewQuestionAnswers, setPreviewQuestionAnswers] = useState<Record<string, any>>({});
+  /** 커리큘럼 편집 UI: 대상 펼침 상태 */
+  const [curriculumTargetOpen, setCurriculumTargetOpen] = useState<Record<string, boolean>>({});
 
   const previewOnlyKey = searchParams.get('preview');
   const isPreviewOnly = Boolean(previewOnlyKey);
@@ -344,6 +347,7 @@ export default function AdminSettingsPage() {
               className: s.className ?? '',
               courseName: s.courseName ?? '',
               targets: s.targets ?? [],
+              field: s.field ?? { large: null, mid: null, small: null },
               level: s.level ?? { large: null, mid: null, small: null },
               columns: cols,
               rows,
@@ -738,6 +742,10 @@ export default function AdminSettingsPage() {
     blocks.find((b) => b.type === 'checkbox' && (b.title ?? '').includes('대상')) as
       | Extract<CommonBlock, { type: 'checkbox' }>
       | undefined;
+  const getFieldBlock = () =>
+    blocks.find((b) => b.type === 'category' && (b.title ?? '').includes('분야')) as
+      | Extract<CommonBlock, { type: 'category' }>
+      | undefined;
   const getLevelBlock = () =>
     blocks.find((b) => b.type === 'category' && (b.title ?? '').includes('급수')) as
       | Extract<CommonBlock, { type: 'category' }>
@@ -761,6 +769,7 @@ export default function AdminSettingsPage() {
           className: '',
           courseName: '',
           targets: [],
+          field: { large: null, mid: null, small: null },
           level: { large: null, mid: null, small: null },
           columns: cols,
           rows: Array.from({ length: 8 }).map((_, i) => ({
@@ -2278,71 +2287,38 @@ export default function AdminSettingsPage() {
                   return null;
                 }
                 const targetBlock = getTargetBlock();
+                const fieldBlock = getFieldBlock();
                 const levelBlock = getLevelBlock();
 
-                const renderTargetPicker = (stage: CurriculumStage) => {
-                  if (!targetBlock) {
+                const renderCategoryPicker = (
+                  label: string,
+                  catBlock: Extract<CommonBlock, { type: 'category' }> | undefined,
+                  value: CurriculumLevelSelection | undefined,
+                  onChange: (next: CurriculumLevelSelection) => void,
+                ) => {
+                  if (!catBlock) {
                     return (
                       <div className="text-xs text-gray-400">
-                        공통 데이터 설정에 “대상” 체크박스 블록이 없습니다.
+                        공통 데이터 설정에 “{label}” 카테고리 블록이 없습니다.
                       </div>
                     );
                   }
-                  return (
-                    <div className="space-y-2">
-                      <div className="text-xs font-semibold text-gray-900">대상</div>
-                      <div className="space-y-1">
-                        {targetBlock.items.map((it) => {
-                          const checked = stage.targets.includes(it.id);
-                          return (
-                            <label key={it.id} className="flex items-center gap-2 text-xs text-gray-800">
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() =>
-                                  updateCurriculumStage(curriculum.key, stage.id, (s) => {
-                                    const cur = s.targets ?? [];
-                                    const next = checked ? cur.filter((x) => x !== it.id) : [...cur, it.id];
-                                    return { ...s, targets: next };
-                                  })
-                                }
-                              />
-                              <span className="truncate">{it.label}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                };
-
-                const renderLevelPicker = (stage: CurriculumStage) => {
-                  if (!levelBlock) {
-                    return (
-                      <div className="text-xs text-gray-400">
-                        공통 데이터 설정에 “급수” 카테고리 블록이 없습니다.
-                      </div>
-                    );
-                  }
-                  const tree = levelBlock.tree ?? {};
+                  const safeValue: CurriculumLevelSelection = value ?? { large: null, mid: null, small: null };
+                  const tree = catBlock.tree ?? {};
                   const largeList = Object.keys(tree);
-                  const midList = stage.level.large ? Object.keys(tree[stage.level.large] ?? {}) : [];
+                  const midList = safeValue.large ? Object.keys(tree[safeValue.large] ?? {}) : [];
                   const smallList =
-                    stage.level.large && stage.level.mid ? (tree[stage.level.large]?.[stage.level.mid] ?? []) : [];
-
+                    safeValue.large && safeValue.mid ? (tree[safeValue.large]?.[safeValue.mid] ?? []) : [];
                   return (
                     <div className="space-y-2">
-                      <div className="text-xs font-semibold text-gray-900">급수</div>
+                      <div className="text-xs font-semibold text-gray-900">{label}</div>
                       <div className="grid grid-cols-1 gap-2">
                         <select
                           className="w-full border border-gray-300 rounded-md px-2 py-1 text-xs bg-white"
-                          value={stage.level.large ?? ''}
+                          value={safeValue.large ?? ''}
                           onChange={(e) => {
                             const v = e.target.value || null;
-                            updateCurriculumStage(curriculum.key, stage.id, (s) => ({
-                              ...s,
-                              level: { large: v, mid: null, small: null },
-                            }));
+                            onChange({ large: v, mid: null, small: null });
                           }}
                         >
                           <option value="" disabled>
@@ -2356,14 +2332,11 @@ export default function AdminSettingsPage() {
                         </select>
                         <select
                           className="w-full border border-gray-300 rounded-md px-2 py-1 text-xs bg-white"
-                          value={stage.level.mid ?? ''}
-                          disabled={!stage.level.large}
+                          value={safeValue.mid ?? ''}
+                          disabled={!safeValue.large}
                           onChange={(e) => {
                             const v = e.target.value || null;
-                            updateCurriculumStage(curriculum.key, stage.id, (s) => ({
-                              ...s,
-                              level: { ...s.level, mid: v, small: null },
-                            }));
+                            onChange({ ...safeValue, mid: v, small: null });
                           }}
                         >
                           <option value="">중 (선택)</option>
@@ -2375,14 +2348,11 @@ export default function AdminSettingsPage() {
                         </select>
                         <select
                           className="w-full border border-gray-300 rounded-md px-2 py-1 text-xs bg-white"
-                          value={stage.level.small ?? ''}
-                          disabled={!stage.level.large || !stage.level.mid}
+                          value={safeValue.small ?? ''}
+                          disabled={!safeValue.large || !safeValue.mid}
                           onChange={(e) => {
                             const v = e.target.value || null;
-                            updateCurriculumStage(curriculum.key, stage.id, (s) => ({
-                              ...s,
-                              level: { ...s.level, small: v },
-                            }));
+                            onChange({ ...safeValue, small: v });
                           }}
                         >
                           <option value="">소 (선택)</option>
@@ -2393,6 +2363,67 @@ export default function AdminSettingsPage() {
                           ))}
                         </select>
                       </div>
+                    </div>
+                  );
+                };
+
+                const renderTargetPicker = (stage: CurriculumStage) => {
+                  if (!targetBlock) {
+                    return (
+                      <div className="text-xs text-gray-400">
+                        공통 데이터 설정에 “대상” 체크박스 블록이 없습니다.
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-xs font-semibold text-gray-900">대상</div>
+                        <button
+                          type="button"
+                          className="text-[11px] px-2 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                          onClick={() =>
+                            setCurriculumTargetOpen((prev) => ({
+                              ...prev,
+                              [stage.id]: !prev[stage.id],
+                            }))
+                          }
+                        >
+                          공통데이터에서 불러오기
+                        </button>
+                      </div>
+
+                      {curriculumTargetOpen[stage.id] ? (
+                        <div className="space-y-1">
+                          {targetBlock.items.map((it) => {
+                            const checked = stage.targets.includes(it.id);
+                            return (
+                              <label key={it.id} className="flex items-center gap-2 text-xs text-gray-800">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() =>
+                                    updateCurriculumStage(curriculum.key, stage.id, (s) => {
+                                      const cur = s.targets ?? [];
+                                      const next = checked ? cur.filter((x) => x !== it.id) : [...cur, it.id];
+                                      return { ...s, targets: next };
+                                    })
+                                  }
+                                />
+                                <span className="truncate">{it.label}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-[11px] text-gray-500">
+                          {stage.targets.length === 0
+                            ? '선택된 대상 없음'
+                            : stage.targets
+                                .map((id) => targetBlock.items.find((x) => x.id === id)?.label ?? id)
+                                .join(', ')}
+                        </div>
+                      )}
                     </div>
                   );
                 };
@@ -2499,10 +2530,23 @@ export default function AdminSettingsPage() {
 
                               <div className="grid grid-cols-1 gap-4">
                                 <div className="bg-white border border-gray-200 rounded-md p-3">
-                                  {renderTargetPicker(stage)}
+                                  {renderCategoryPicker('분야', fieldBlock, stage.field, (next) =>
+                                    updateCurriculumStage(curriculum.key, stage.id, (s) => ({
+                                      ...s,
+                                      field: next,
+                                    })),
+                                  )}
                                 </div>
                                 <div className="bg-white border border-gray-200 rounded-md p-3">
-                                  {renderLevelPicker(stage)}
+                                  {renderCategoryPicker('급수', levelBlock, stage.level, (next) =>
+                                    updateCurriculumStage(curriculum.key, stage.id, (s) => ({
+                                      ...s,
+                                      level: next,
+                                    })),
+                                  )}
+                                </div>
+                                <div className="bg-white border border-gray-200 rounded-md p-3">
+                                  {renderTargetPicker(stage)}
                                 </div>
                               </div>
 
@@ -2535,7 +2579,7 @@ export default function AdminSettingsPage() {
                                           <th key={col.id} className="px-2 py-2 text-left font-medium text-gray-500">
                                             <div className="flex items-center gap-1 min-w-0">
                                               <input
-                                                className="w-full min-w-0 border border-gray-300 rounded-md px-2 py-1 text-xs bg-white"
+                                                className="w-32 min-w-0 border border-gray-300 rounded-md px-2 py-1 text-xs bg-white"
                                                 value={col.title}
                                                 onChange={(e) =>
                                                   updateCurriculumStage(curriculum.key, stage.id, (s) => ({
@@ -2581,7 +2625,7 @@ export default function AdminSettingsPage() {
                                           {(stage.columns ?? []).map((col) => (
                                             <td key={col.id} className="px-2 py-2">
                                               <textarea
-                                                className="w-56 border border-gray-300 rounded-md px-2 py-1 text-xs"
+                                                className="w-44 border border-gray-300 rounded-md px-2 py-1 text-xs"
                                                 rows={2}
                                                 value={r.cells?.[col.id] ?? ''}
                                                 onChange={(e) =>
