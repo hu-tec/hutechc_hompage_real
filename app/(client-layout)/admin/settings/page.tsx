@@ -37,6 +37,12 @@ type CurriculumStage = {
   targets: string[]; // 대상(checkbox item ids)
   field: CurriculumLevelSelection; // 분야 선택(대/중/소)
   level: CurriculumLevelSelection; // 급수 선택(대/중/소)
+  /** 커리큘럼 편집: 공통데이터 블록 연결(카테고리=상단, 체크/드롭=대상 옆) */
+  commonTopBlockIds?: string[]; // category block ids
+  commonSideBlockIds?: string[]; // checkbox/dropdown block ids
+  categorySelections?: Record<string, CurriculumLevelSelection>; // blockId -> selection
+  dropdownSelections?: Record<string, string>; // blockId -> optionId
+  checkboxSelections?: Record<string, string[]>; // blockId -> itemIds
   columns: CurriculumColumn[]; // 주차표 컬럼(주제/교육목표/교육내용 등) - 수정/추가 가능
   rows: CurriculumWeekRow[]; // 주차표
 };
@@ -259,15 +265,52 @@ export default function AdminSettingsPage() {
   const [previewQuestionAnswers, setPreviewQuestionAnswers] = useState<Record<string, any>>({});
   /** 커리큘럼 편집 UI: 대상 펼침 상태 */
   const [curriculumTargetOpen, setCurriculumTargetOpen] = useState<Record<string, boolean>>({});
+  /** 커리큘럼 편집 UI: 공통데이터 불러오기 모달 */
+  const [curriculumImportCtx, setCurriculumImportCtx] = useState<null | { currKey: string; stageId: string }>(null);
 
   const previewOnlyKey = searchParams.get('preview');
   const isPreviewOnly = Boolean(previewOnlyKey);
+
+  const getDefaultFieldLevelBlockIds = () => {
+    const field = blocks.find((b) => b.type === 'category' && (b.title ?? '').includes('분야'))?.id ?? null;
+    const level = blocks.find((b) => b.type === 'category' && (b.title ?? '').includes('급수'))?.id ?? null;
+    return { field, level };
+  };
 
   useEffect(() => {
     if (!previewOnlyKey) return;
     setActiveTab('pages');
     setPreviewPageKey(previewOnlyKey);
   }, [previewOnlyKey]);
+
+  // 커리큘럼 편집 진입 시: 분야/급수 카테고리를 기본으로 항상 표시되도록 stage에 자동 주입
+  useEffect(() => {
+    if (activeTab !== 'curriculum') return;
+    if (!editingCurriculumKey) return;
+    const { field, level } = getDefaultFieldLevelBlockIds();
+    if (!field && !level) return;
+    setCurriculums((prev) =>
+      prev.map((c) => {
+        if (c.key !== editingCurriculumKey) return c;
+        const nextStages = (c.stages ?? []).map((s) => {
+          const top = s.commonTopBlockIds ?? [];
+          const nextTop = [...top];
+          if (field && !nextTop.includes(field)) nextTop.unshift(field);
+          if (level && !nextTop.includes(level)) nextTop.push(level);
+          const nextCatSel: Record<string, CurriculumLevelSelection> = { ...(s.categorySelections ?? {}) };
+          if (field && !nextCatSel[field]) nextCatSel[field] = s.field ?? { large: null, mid: null, small: null };
+          if (level && !nextCatSel[level]) nextCatSel[level] = s.level ?? { large: null, mid: null, small: null };
+          return {
+            ...s,
+            commonTopBlockIds: nextTop,
+            categorySelections: nextCatSel,
+          };
+        });
+        return { ...c, stages: nextStages };
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, editingCurriculumKey, blocks]);
 
   const loadFromStorage = () => {
     try {
@@ -349,6 +392,14 @@ export default function AdminSettingsPage() {
               targets: s.targets ?? [],
               field: s.field ?? { large: null, mid: null, small: null },
               level: s.level ?? { large: null, mid: null, small: null },
+              commonTopBlockIds: s.commonTopBlockIds ?? ['cat-default-1', 'cat-default-2'],
+              commonSideBlockIds: s.commonSideBlockIds ?? ['cb-default-1'],
+              categorySelections: s.categorySelections ?? {
+                'cat-default-1': s.field ?? { large: null, mid: null, small: null },
+                'cat-default-2': s.level ?? { large: null, mid: null, small: null },
+              },
+              dropdownSelections: s.dropdownSelections ?? {},
+              checkboxSelections: s.checkboxSelections ?? { 'cb-default-1': s.targets ?? [] },
               columns: cols,
               rows,
             } as CurriculumStage;
@@ -771,6 +822,14 @@ export default function AdminSettingsPage() {
           targets: [],
           field: { large: null, mid: null, small: null },
           level: { large: null, mid: null, small: null },
+          commonTopBlockIds: ['cat-default-1', 'cat-default-2'],
+          commonSideBlockIds: ['cb-default-1'],
+          categorySelections: {
+            'cat-default-1': { large: null, mid: null, small: null },
+            'cat-default-2': { large: null, mid: null, small: null },
+          },
+          dropdownSelections: {},
+          checkboxSelections: { 'cb-default-1': [] },
           columns: cols,
           rows: Array.from({ length: 8 }).map((_, i) => ({
             id: `row-${Date.now()}-${i}`,
@@ -2289,6 +2348,9 @@ export default function AdminSettingsPage() {
                 const targetBlock = getTargetBlock();
                 const fieldBlock = getFieldBlock();
                 const levelBlock = getLevelBlock();
+                const allCommonBlocks = blocks.filter(
+                  (b) => b.type === 'category' || b.type === 'checkbox' || b.type === 'dropdown',
+                ) as CommonBlock[];
 
                 const renderCategoryPicker = (
                   label: string,
@@ -2368,62 +2430,118 @@ export default function AdminSettingsPage() {
                 };
 
                 const renderTargetPicker = (stage: CurriculumStage) => {
-                  if (!targetBlock) {
-                    return (
-                      <div className="text-xs text-gray-400">
-                        공통 데이터 설정에 “대상” 체크박스 블록이 없습니다.
-                      </div>
-                    );
-                  }
+                  const sideIds = stage.commonSideBlockIds ?? [];
                   return (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between gap-2">
-                        <div className="text-xs font-semibold text-gray-900">대상</div>
+                        <div className="text-xs font-semibold text-gray-900">공통데이터</div>
                         <button
                           type="button"
                           className="text-[11px] px-2 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-                          onClick={() =>
-                            setCurriculumTargetOpen((prev) => ({
-                              ...prev,
-                              [stage.id]: !prev[stage.id],
-                            }))
-                          }
+                          onClick={() => setCurriculumImportCtx({ currKey: curriculum.key, stageId: stage.id })}
                         >
                           공통데이터에서 불러오기
                         </button>
                       </div>
 
-                      {curriculumTargetOpen[stage.id] ? (
-                        <div className="space-y-1">
-                          {targetBlock.items.map((it) => {
-                            const checked = stage.targets.includes(it.id);
-                            return (
-                              <label key={it.id} className="flex items-center gap-2 text-xs text-gray-800">
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={() =>
-                                    updateCurriculumStage(curriculum.key, stage.id, (s) => {
-                                      const cur = s.targets ?? [];
-                                      const next = checked ? cur.filter((x) => x !== it.id) : [...cur, it.id];
-                                      return { ...s, targets: next };
-                                    })
-                                  }
-                                />
-                                <span className="truncate">{it.label}</span>
-                              </label>
-                            );
+                      <div className="grid grid-cols-1 gap-3">
+                        {/* 대상(기본: cb-default-1) 요약 */}
+                        {(() => {
+                          const targetId = 'cb-default-1';
+                          const cb = allCommonBlocks.find((b) => b.id === targetId && b.type === 'checkbox') as
+                            | Extract<CommonBlock, { type: 'checkbox' }>
+                            | undefined;
+                          const picked = stage.checkboxSelections?.[targetId] ?? stage.targets ?? [];
+                          const labels = cb
+                            ? picked.map((id) => cb.items.find((x) => x.id === id)?.label ?? id)
+                            : picked;
+                          return (
+                            <div className="text-[11px] text-gray-600">
+                              {labels.length === 0 ? '선택된 대상 없음' : labels.join(', ')}
+                            </div>
+                          );
+                        })()}
+
+                        {/* 대상 옆(체크/드롭) 작은 선택 UI */}
+                        <div className="flex flex-col gap-2">
+                          {sideIds.map((bid) => {
+                            const b = allCommonBlocks.find((x) => x.id === bid);
+                            if (!b) return null;
+                            if (b.type === 'dropdown') {
+                              const v = stage.dropdownSelections?.[b.id] ?? '';
+                              return (
+                                <div key={b.id} className="border border-gray-200 bg-white rounded-md px-3 py-2 text-xs w-full">
+                                  <div className="font-semibold text-gray-900 truncate">{b.title}</div>
+                                  <select
+                                    className="mt-2 w-full border border-gray-300 rounded-md px-2 py-1 text-xs bg-white"
+                                    value={v}
+                                    onChange={(e) =>
+                                      updateCurriculumStage(curriculum.key, stage.id, (s) => ({
+                                        ...s,
+                                        dropdownSelections: { ...(s.dropdownSelections ?? {}), [b.id]: e.target.value },
+                                      }))
+                                    }
+                                  >
+                                    <option value="" disabled>
+                                      {b.placeholder || '선택'}
+                                    </option>
+                                    {b.options.map((o) => (
+                                      <option key={o.id} value={o.id}>
+                                        {o.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              );
+                            }
+                            if (b.type === 'checkbox') {
+                              const picked = stage.checkboxSelections?.[b.id] ?? (b.id === 'cb-default-1' ? stage.targets : []) ?? [];
+                              return (
+                                <div key={b.id} className="border border-gray-200 bg-white rounded-md px-3 py-2 text-xs w-full">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="font-semibold text-gray-900 truncate">{b.title}</div>
+                                    <button
+                                      type="button"
+                                      className="text-[11px] text-red-600 hover:text-red-800"
+                                      onClick={() =>
+                                        updateCurriculumStage(curriculum.key, stage.id, (s) => ({
+                                          ...s,
+                                          commonSideBlockIds: (s.commonSideBlockIds ?? []).filter((x) => x !== b.id || x === 'cb-default-1'),
+                                        }))
+                                      }
+                                    >
+                                      제거
+                                    </button>
+                                  </div>
+                                  <div className="mt-2 space-y-1 max-h-28 overflow-y-auto">
+                                    {b.items.map((it) => {
+                                      const checked = (picked ?? []).includes(it.id);
+                                      return (
+                                        <label key={it.id} className="flex items-center gap-2 text-[11px] text-gray-800">
+                                          <input
+                                            type="checkbox"
+                                            checked={checked}
+                                            onChange={() =>
+                                              updateCurriculumStage(curriculum.key, stage.id, (s) => {
+                                                const cur = s.checkboxSelections?.[b.id] ?? (b.id === 'cb-default-1' ? (s.targets ?? []) : []);
+                                                const next = checked ? cur.filter((x) => x !== it.id) : [...cur, it.id];
+                                                const nextMap = { ...(s.checkboxSelections ?? {}), [b.id]: next };
+                                                return { ...s, checkboxSelections: nextMap, targets: b.id === 'cb-default-1' ? next : s.targets };
+                                              })
+                                            }
+                                          />
+                                          <span className="truncate">{it.label}</span>
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return null;
                           })}
                         </div>
-                      ) : (
-                        <div className="text-[11px] text-gray-500">
-                          {stage.targets.length === 0
-                            ? '선택된 대상 없음'
-                            : stage.targets
-                                .map((id) => targetBlock.items.find((x) => x.id === id)?.label ?? id)
-                                .join(', ')}
-                        </div>
-                      )}
+                      </div>
                     </div>
                   );
                 };
@@ -2528,23 +2646,49 @@ export default function AdminSettingsPage() {
                                 />
                               </div>
 
+                              {/* 카테고리(공통데이터) 불러온 항목들은 대상 위에 표시 */}
+                              <div className="grid grid-cols-1 gap-3">
+                                {(stage.commonTopBlockIds ?? []).map((bid) => {
+                                  const b = allCommonBlocks.find((x) => x.id === bid && x.type === 'category') as
+                                    | Extract<CommonBlock, { type: 'category' }>
+                                    | undefined;
+                                  if (!b) return null;
+                                  const val = stage.categorySelections?.[bid] ?? { large: null, mid: null, small: null };
+                                  return (
+                                    <div key={bid} className="bg-white border border-gray-200 rounded-md p-3">
+                                      <div className="flex items-center justify-between gap-2 mb-2">
+                                        <div className="text-xs font-semibold text-gray-900 truncate">{b.title}</div>
+                                        <button
+                                          type="button"
+                                          className="text-[11px] text-red-600 hover:text-red-800"
+                                          onClick={() =>
+                                            updateCurriculumStage(curriculum.key, stage.id, (s) => ({
+                                              ...s,
+                                              commonTopBlockIds: (s.commonTopBlockIds ?? []).filter((x) => x !== bid),
+                                            }))
+                                          }
+                                        >
+                                          제거
+                                        </button>
+                                      </div>
+                                      {renderCategoryPicker(
+                                        b.title,
+                                        b,
+                                        val,
+                                        (next) =>
+                                          updateCurriculumStage(curriculum.key, stage.id, (s) => ({
+                                            ...s,
+                                            categorySelections: { ...(s.categorySelections ?? {}), [bid]: next },
+                                            field: bid === 'cat-default-1' ? next : s.field,
+                                            level: bid === 'cat-default-2' ? next : s.level,
+                                          })),
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
                               <div className="grid grid-cols-1 gap-4">
-                                <div className="bg-white border border-gray-200 rounded-md p-3">
-                                  {renderCategoryPicker('분야', fieldBlock, stage.field, (next) =>
-                                    updateCurriculumStage(curriculum.key, stage.id, (s) => ({
-                                      ...s,
-                                      field: next,
-                                    })),
-                                  )}
-                                </div>
-                                <div className="bg-white border border-gray-200 rounded-md p-3">
-                                  {renderCategoryPicker('급수', levelBlock, stage.level, (next) =>
-                                    updateCurriculumStage(curriculum.key, stage.id, (s) => ({
-                                      ...s,
-                                      level: next,
-                                    })),
-                                  )}
-                                </div>
                                 <div className="bg-white border border-gray-200 rounded-md p-3">
                                   {renderTargetPicker(stage)}
                                 </div>
@@ -3094,6 +3238,81 @@ export default function AdminSettingsPage() {
                   <div className="text-xs text-gray-600">{opt.desc}</div>
                 </button>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 커리큘럼 - 공통데이터 불러오기 모달 */}
+      {curriculumImportCtx && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-3xl bg-white rounded-lg shadow-lg p-6 text-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-gray-900">공통데이터에서 불러오기</h2>
+              <button
+                type="button"
+                className="text-xs text-gray-500 hover:text-gray-700"
+                onClick={() => setCurriculumImportCtx(null)}
+              >
+                닫기
+              </button>
+            </div>
+            <p className="text-xs text-gray-600 mb-4">
+              카테고리는 대상 위에 추가되고, 체크박스/드롭다운은 대상 옆에 작게 추가됩니다.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {blocks
+                .filter((b) => b.type === 'category' || b.type === 'checkbox' || b.type === 'dropdown')
+                .map((b) => (
+                  <button
+                    key={b.id}
+                    type="button"
+                    className="border border-gray-200 rounded-md p-4 text-left hover:bg-gray-50"
+                    onClick={() => {
+                      const { currKey, stageId } = curriculumImportCtx;
+                      updateCurriculumStage(currKey, stageId, (s) => {
+                        if (b.type === 'category') {
+                          const ids = s.commonTopBlockIds ?? [];
+                          if (ids.includes(b.id)) return s;
+                          return {
+                            ...s,
+                            commonTopBlockIds: [...ids, b.id],
+                            categorySelections: {
+                              ...(s.categorySelections ?? {}),
+                              [b.id]: s.categorySelections?.[b.id] ?? { large: null, mid: null, small: null },
+                            },
+                          };
+                        }
+                        if (b.type === 'dropdown') {
+                          const ids = s.commonSideBlockIds ?? [];
+                          if (ids.includes(b.id)) return s;
+                          return {
+                            ...s,
+                            commonSideBlockIds: [...ids, b.id],
+                            dropdownSelections: { ...(s.dropdownSelections ?? {}), [b.id]: s.dropdownSelections?.[b.id] ?? '' },
+                          };
+                        }
+                        // checkbox
+                        const ids = s.commonSideBlockIds ?? [];
+                        if (ids.includes(b.id)) return s;
+                        return {
+                          ...s,
+                          commonSideBlockIds: [...ids, b.id],
+                          checkboxSelections: { ...(s.checkboxSelections ?? {}), [b.id]: s.checkboxSelections?.[b.id] ?? [] },
+                        };
+                      });
+                      setCurriculumImportCtx(null);
+                    }}
+                  >
+                    <div className="font-semibold text-gray-900 mb-1">{b.title || '이름 없음'}</div>
+                    <div className="text-xs text-gray-600">
+                      {b.type === 'category' && '카테고리'}
+                      {b.type === 'checkbox' && '체크박스'}
+                      {b.type === 'dropdown' && '드롭다운'}
+                    </div>
+                  </button>
+                ))}
             </div>
           </div>
         </div>
