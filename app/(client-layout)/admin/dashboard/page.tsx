@@ -198,6 +198,13 @@ export default function AdminDashboardPage() {
               title="데이터 관리"
               description="데이터 조회, 백업, 이관 및 관리"
             />
+            <Card
+              href="/admin/settings"
+              icon="⚙️"
+              title="페이지별 설정관리"
+              description="공통 데이터 설정 및 페이지별 UI/정책 설정"
+              badge="확장"
+            />
           </div>
         </section>
       </main>
